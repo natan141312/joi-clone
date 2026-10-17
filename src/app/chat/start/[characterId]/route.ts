@@ -6,7 +6,8 @@ import { createChat, getCharacter } from "@/lib/companion/store";
 export async function GET(_req: Request, ctx: RouteContext<"/chat/start/[characterId]">) {
   const { characterId } = await ctx.params;
   const character = await getCharacter(characterId);
-  if (!character) return Response.json({ error: "Unknown character" }, { status: 404 });
+  // Stale or deleted link: go back to Explore instead of showing a raw error.
+  if (!character) redirect("/?gender=any");
   const ownerId = await ensureViewerId();
   const user = await getCurrentUser();
   const chat = await createChat(character, user?.name ?? "You", ownerId);

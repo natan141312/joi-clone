@@ -1,44 +1,12 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { kv } from "./kv";
 import { DEFAULT_PARAMS, type Character, type CharacterInput, type Chat, type Message, type User } from "./types";
 
-// Local JSON storage under data/companion/{characters,chats,users,sessions}/<id>.json.
-// Swap this module for a database later; the API routes only use the exported functions.
-// Serverless hosts (Vercel) only allow writes under /tmp, and that storage is temporary per instance.
-const ROOT =
-  process.env.COMPANION_DATA_DIR ??
-  (process.env.VERCEL ? path.join(tmpdir(), "companion") : path.join(process.cwd(), "data", "companion"));
-const CHAR_DIR = path.join(ROOT, "characters");
-const CHAT_DIR = path.join(ROOT, "chats");
-const USER_DIR = path.join(ROOT, "users");
-const SESSION_DIR = path.join(ROOT, "sessions");
+// All persistence goes through kv (Upstash Redis on Vercel, JSON files locally).
+// The API routes only use the exported functions.
 
 const SAFE_ID = /^[a-zA-Z0-9-]{1,80}$/;
-
-async function readJson<T>(file: string): Promise<T | null> {
-  try {
-    return JSON.parse(await readFile(file, "utf8")) as T;
-  } catch {
-    return null;
-  }
-}
-
-async function writeJson(file: string, data: unknown) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.${randomUUID()}.tmp`;
-  await writeFile(tmp, JSON.stringify(data, null, 2));
-  await rename(tmp, file);
-}
-
-async function readAll<T>(dir: string): Promise<T[]> {
-  await mkdir(dir, { recursive: true });
-  const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
-  const all = await Promise.all(files.map((f) => readJson<T>(path.join(dir, f))));
-  return all.filter((x): x is Awaited<T> => x !== null) as T[];
-}
 
 // Built-in "Joi Original" characters: fictional adults with neutral descriptions.
 const SEED: Omit<CharacterInput, "params">[] = [
@@ -110,11 +78,23 @@ const SEED: Omit<CharacterInput, "params">[] = [
   },
 ];
 
-async function ensureSeed() {
-  await mkdir(CHAR_DIR, { recursive: true });
-  const files = await readdir(CHAR_DIR);
-  if (files.some((f) => f.endsWith(".json"))) return;
-  for (const c of SEED) await createCharacter({ ...c, params: DEFAULT_PARAMS });
+// Built-in characters use fixed ids (their lowercase name) so every server instance agrees on them.
+const SEED_CREATED_AT = "2026-01-01T00:00:00.000Z";
+let seeded: Promise<void> | null = null;
+
+function ensureSeed() {
+  seeded ??= (async () => {
+    for (const [i, c] of SEED.entries()) {
+      const id = c.name.toLowerCase();
+      if (await kv.get("characters", id)) continue;
+      const createdAt = new Date(Date.parse(SEED_CREATED_AT) + i * 1000).toISOString();
+      await kv.put("characters", id, { ...c, params: DEFAULT_PARAMS, id, createdAt } satisfies Character);
+    }
+  })().catch((e) => {
+    seeded = null;
+    throw e;
+  });
+  return seeded;
 }
 
 const SEED_AVATARS = new Map(SEED.map((c) => [c.name, c.avatar]));
@@ -129,19 +109,19 @@ function normalize(c: Character): Character {
 
 export async function listCharacters(): Promise<Character[]> {
   await ensureSeed();
-  return (await readAll<Character>(CHAR_DIR)).map(normalize).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return (await kv.all<Character>("characters")).map(normalize).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function getCharacter(id: string): Promise<Character | null> {
   if (!SAFE_ID.test(id)) return null;
   await ensureSeed();
-  const c = await readJson<Character>(path.join(CHAR_DIR, `${id}.json`));
+  const c = await kv.get<Character>("characters", id);
   return c ? normalize(c) : null;
 }
 
 export async function createCharacter(input: CharacterInput): Promise<Character> {
   const character: Character = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
-  await writeJson(path.join(CHAR_DIR, `${character.id}.json`), character);
+  await kv.put("characters", character.id, character);
   return character;
 }
 
@@ -149,13 +129,13 @@ export async function updateCharacter(id: string, patch: Partial<CharacterInput>
   const current = await getCharacter(id);
   if (!current) return null;
   const next = { ...current, ...patch, id: current.id, ownerId: current.ownerId, createdAt: current.createdAt };
-  await writeJson(path.join(CHAR_DIR, `${id}.json`), next);
+  await kv.put("characters", id, next);
   return next;
 }
 
 export async function deleteCharacter(id: string): Promise<boolean> {
   if (!(await getCharacter(id))) return false;
-  await rm(path.join(CHAR_DIR, `${id}.json`));
+  await kv.del("characters", id);
   return true;
 }
 
@@ -178,29 +158,29 @@ export async function createChat(character: Character, userName: string, ownerId
     createdAt: now,
     updatedAt: now,
   };
-  await writeJson(path.join(CHAT_DIR, `${chat.id}.json`), chat);
+  await kv.put("chats", chat.id, chat);
   return chat;
 }
 
 export async function getChat(id: string): Promise<Chat | null> {
   if (!SAFE_ID.test(id)) return null;
-  return readJson<Chat>(path.join(CHAT_DIR, `${id}.json`));
+  return kv.get<Chat>("chats", id);
 }
 
 export async function listChats(ownerId: string): Promise<Chat[]> {
-  return (await readAll<Chat>(CHAT_DIR)).filter((c) => c.ownerId === ownerId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return (await kv.all<Chat>("chats")).filter((c) => c.ownerId === ownerId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function deleteChat(id: string): Promise<boolean> {
   if (!(await getChat(id))) return false;
-  await rm(path.join(CHAT_DIR, `${id}.json`));
+  await kv.del("chats", id);
   return true;
 }
 
 /** Number of chats and messages per character, shown on the cards. */
 export async function characterStats(): Promise<Record<string, { chats: number; messages: number }>> {
   const stats: Record<string, { chats: number; messages: number }> = {};
-  for (const c of await readAll<Chat>(CHAT_DIR)) {
+  for (const c of await kv.all<Chat>("chats")) {
     const s = (stats[c.characterId] ??= { chats: 0, messages: 0 });
     s.chats += 1;
     s.messages += c.messages.length;
@@ -214,7 +194,7 @@ export async function appendMessages(chatId: string, messages: Omit<Message, "id
   const now = new Date().toISOString();
   chat.messages.push(...messages.map((m) => ({ ...m, id: randomUUID(), createdAt: now })));
   chat.updatedAt = now;
-  await writeJson(path.join(CHAT_DIR, `${chat.id}.json`), chat);
+  await kv.put("chats", chat.id, chat);
   return chat;
 }
 
@@ -222,43 +202,43 @@ export async function appendMessages(chatId: string, messages: Omit<Message, "id
 
 export async function getUser(id: string): Promise<User | null> {
   if (!SAFE_ID.test(id)) return null;
-  return readJson<User>(path.join(USER_DIR, `${id}.json`));
+  return kv.get<User>("users", id);
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
-  return (await readAll<User>(USER_DIR)).find((u) => u.email === email) ?? null;
+  return (await kv.all<User>("users")).find((u) => u.email === email) ?? null;
 }
 
 export async function createUser(input: Omit<User, "id" | "createdAt">): Promise<User> {
   const user: User = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
-  await writeJson(path.join(USER_DIR, `${user.id}.json`), user);
+  await kv.put("users", user.id, user);
   return user;
 }
 
 /** Moves an anonymous visitor's chats and characters to their account after sign up / log in. */
 export async function claimAnonymousData(anonId: string, userId: string) {
-  for (const c of await readAll<Chat>(CHAT_DIR)) {
-    if (c.ownerId === anonId) await writeJson(path.join(CHAT_DIR, `${c.id}.json`), { ...c, ownerId: userId });
+  for (const c of await kv.all<Chat>("chats")) {
+    if (c.ownerId === anonId) await kv.put("chats", c.id, { ...c, ownerId: userId });
   }
-  for (const c of await readAll<Character>(CHAR_DIR)) {
-    if (c.ownerId === anonId) await writeJson(path.join(CHAR_DIR, `${c.id}.json`), { ...c, ownerId: userId });
+  for (const c of await kv.all<Character>("characters")) {
+    if (c.ownerId === anonId) await kv.put("characters", c.id, { ...c, ownerId: userId });
   }
 }
 
 type Session = { userId: string; expires: string };
 
 export async function createSession(token: string, userId: string, expires: string) {
-  await writeJson(path.join(SESSION_DIR, `${token}.json`), { userId, expires } satisfies Session);
+  await kv.put("sessions", token, { userId, expires } satisfies Session);
 }
 
 export async function getSessionUserId(token: string): Promise<string | null> {
   if (!/^[a-f0-9]{64}$/.test(token)) return null;
-  const s = await readJson<Session>(path.join(SESSION_DIR, `${token}.json`));
+  const s = await kv.get<Session>("sessions", token);
   if (!s || new Date(s.expires) < new Date()) return null;
   return s.userId;
 }
 
 export async function deleteSession(token: string) {
   if (!/^[a-f0-9]{64}$/.test(token)) return;
-  await rm(path.join(SESSION_DIR, `${token}.json`), { force: true });
+  await kv.del("sessions", token);
 }
