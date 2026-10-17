@@ -22,7 +22,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/mess
 
   let chunks: AsyncIterable<string>;
   try {
-    chunks = await streamChat(buildMessages(character, chat, { vision: llmConfig.vision }), character.params, req.signal);
+    chunks = await streamChat(buildMessages(character, chat, { vision: llmConfig.vision }), character.params, req.signal, character.model);
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }

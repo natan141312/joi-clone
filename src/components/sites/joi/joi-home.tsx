@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Atom, Briefcase, ChefHat, ChevronDown, ChevronLeft, ChevronRight, Code2, Dumbbell, GraduationCap, HeartPulse, LayoutGrid,
-  MessageCircle, Music2, Palette, Plane, Plus, Scale, Search, Star, User, Wallet, X, type LucideIcon,
+  Bot, MessageCircle, Music2, Palette, Plane, Plus, Scale, Search, Star, User, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import type { PublicUser } from "@/lib/companion/types";
 import { AGE_FILTERS, CATEGORY_INFO, CREATOR_FILTERS, DEFAULT_FILTERS, DISCOVER, FAQ, FILTER_TAGS, GENDER_FILTERS, INTRO, SORTS, type HomeCard, type HomeFilters } from "./data";
@@ -189,7 +189,7 @@ function CategorySidebar({
                         {c.image ? <img src={c.image} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover object-top" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff2792] text-[12px] font-semibold">{c.name[0]}</span>}
                         <span className="min-w-0">
                           <span className="block truncate text-[13px] font-medium">{c.name} · <span className="text-[#ff6bb5]">{c.tagline}</span></span>
-                          <span className="block truncate text-[11px] text-[#858585]">{c.expertise}</span>
+                          <span className="block truncate text-[11px] text-[#858585]">{c.expertise} · {c.modelFamily}</span>
                         </span>
                       </a>
                     </li>
@@ -422,6 +422,10 @@ export function JoiHome({
                         <span className="text-[#858585]">{t(lang, "Expert in")}: </span>
                         {c.expertise}
                       </p>
+                      <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-[#cfcfcf]" title={c.modelLabel}>
+                        <Bot size={12} className="text-[#ff6bb5]" />
+                        {t(lang, "Runs on")} {c.modelLabel}
+                      </span>
                       <div className="mt-auto flex items-center justify-between pt-2 text-[11px] text-[#858585]">
                         <span className="flex items-center gap-1"><MessageCircle size={12} />{compact(c.chats)} {t(lang, "chats")}</span>
                         <span>{c.creator === "original" ? t(lang, "PRO Original") : c.creator === "mine" ? <span className="text-white">{t(lang, "Yours")}</span> : t(lang, "Community")}</span>

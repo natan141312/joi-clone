@@ -1,6 +1,7 @@
 import { JoiHome } from "@/components/sites/joi/joi-home";
 import { DEFAULT_FILTERS, type HomeCard, type HomeFilters } from "@/components/sites/joi/data";
 import { avatarFor } from "@/lib/companion/avatar";
+import { modelInfo } from "@/lib/companion/models";
 import { getPageContext } from "@/lib/companion/page-context";
 import { characterStats, listCharacters } from "@/lib/companion/store";
 
@@ -15,6 +16,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
     id: c.id,
     tagline: c.tagline,
     expertise: c.expertise,
+    modelFamily: modelInfo(c.model).family,
+    modelLabel: modelInfo(c.model).label,
     rating: stats[c.id]?.rating ?? 0,
     ratings: stats[c.id]?.ratings ?? 0,
     createdAt: c.createdAt,

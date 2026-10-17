@@ -1,3 +1,4 @@
+import { MODEL_OPTIONS } from "./models";
 import { CHARACTER_TAGS, DEFAULT_PARAMS, type CharacterInput, type CharacterTag } from "./types";
 
 const LIMITS: Record<string, number> = {
@@ -84,6 +85,12 @@ export function validateCharacter(body: unknown, { partial = false } = {}): Vali
   if (!partial || "tags" in b) {
     const tags = Array.isArray(b.tags) ? b.tags : [];
     out.tags = [...new Set(tags.filter((t): t is CharacterTag => CHARACTER_TAGS.includes(t as CharacterTag)))];
+  }
+
+  if (!partial || "model" in b) {
+    const model = str(b.model);
+    if (model && !MODEL_OPTIONS.some((m) => m.id === model)) errors.push("unknown model");
+    out.model = model || undefined;
   }
 
   if (!partial || "style" in b) {

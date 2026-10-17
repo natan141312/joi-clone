@@ -64,6 +64,7 @@ const HE: Record<string, string> = {
   "Discover more": "גלה עוד",
   Yours: "שלך",
   Categories: "קטגוריות",
+  "Runs on": "רץ על",
   "Featured expert": "מומחה מומלץ",
   "Expert in": "מומחה ב",
   experts: "מומחים",

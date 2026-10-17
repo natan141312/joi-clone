@@ -62,6 +62,9 @@ export type HomeCard = {
   id: string;
   tagline: string;
   expertise: string;
+  /** Model family/label this expert is configured for, e.g. "Claude" / "Claude Sonnet 5.5". */
+  modelFamily: string;
+  modelLabel: string;
   rating: number;
   ratings: number;
   createdAt: string;

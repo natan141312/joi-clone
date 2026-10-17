@@ -6,6 +6,8 @@ import { ExpertProfile } from "@/components/sites/joi/expert-profile";
 import { RateExpert } from "@/components/sites/joi/rate-expert";
 import { PageShell } from "@/components/sites/joi/page-shell";
 import { avatarFor } from "@/lib/companion/avatar";
+import { activeProvider, runningModelLabel } from "@/lib/companion/llm";
+import { modelInfo } from "@/lib/companion/models";
 import { getPageContext } from "@/lib/companion/page-context";
 import { characterStats, getCharacter, getViewerRating } from "@/lib/companion/store";
 
@@ -34,6 +36,11 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             <h1 className="text-[32px] font-bold leading-tight">{character.name}</h1>
             <p className="text-[18px] font-semibold text-[#ff6bb5]">{character.tagline}</p>
             <p className="mt-1 text-[14px] text-[#d4d4d4]"><span className="text-[#858585]">Expert in: </span>{character.expertise}</p>
+            <p className="mt-1 text-[13px] text-[#d4d4d4]">
+              <span className="text-[#858585]">AI model: </span>
+              {modelInfo(character.model).label}
+              {activeProvider() !== "openrouter" && <span className="text-[#858585]"> · now running on {runningModelLabel(character.model)}</span>}
+            </p>
             <p className="mt-1 text-[13px] text-[#858585]">
               {character.ownerId ? (isOwner ? "Created by you" : "Community character") : "PRO Original"} · {s.chats} chats · {s.messages} messages · age {character.age}
             </p>

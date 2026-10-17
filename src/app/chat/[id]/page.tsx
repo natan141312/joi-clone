@@ -3,6 +3,7 @@ import { ChatView } from "@/components/sites/joi/chat-view";
 import { getOwnedChat } from "@/lib/companion/access";
 import { getCurrentUser, getViewerId } from "@/lib/companion/auth";
 import { avatarFor } from "@/lib/companion/avatar";
+import { runningModelLabel } from "@/lib/companion/llm";
 import { getCharacter, getChat, newChatDraft } from "@/lib/companion/store";
 
 export default async function ChatPage({
@@ -23,5 +24,5 @@ export default async function ChatPage({
     const [user, viewer] = await Promise.all([getCurrentUser(), getViewerId()]);
     owned = { chat: newChatDraft(character, user?.name ?? "friend", viewer ?? "", id), character };
   }
-  return <ChatView initialChat={owned.chat} character={{ ...owned.character, avatar: avatarFor(owned.character) }} />;
+  return <ChatView initialChat={owned.chat} character={{ ...owned.character, avatar: avatarFor(owned.character) }} modelLabel={runningModelLabel(owned.character.model)} />;
 }

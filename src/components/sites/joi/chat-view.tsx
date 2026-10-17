@@ -8,11 +8,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Character, Chat, Message } from "@/lib/companion/types";
 
+import { saveLocalChat } from "./local-chats";
 import { MARKDOWN } from "./markdown";
 
 type Status = { llm: string; vision: boolean; tts: boolean; stt: boolean; images: boolean };
 
-export function ChatView({ initialChat, character }: { initialChat: Chat; character: Character }) {
+export function ChatView({ initialChat, character, modelLabel }: { initialChat: Chat; character: Character; modelLabel: string }) {
   const [messages, setMessages] = useState<Message[]>(initialChat.messages);
   const [text, setText] = useState("");
   const [image, setImage] = useState<string>();
@@ -43,10 +44,22 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
     try {
       // Text only: pictures are too large for localStorage.
       localStorage.setItem(backupKey, JSON.stringify(messages.filter((m) => m.content).map((m) => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt }))));
+      const last = [...messages].reverse().find((m) => m.content || m.image);
+      if (messages.some((m) => m.role === "user")) {
+        saveLocalChat({
+          id: initialChat.id,
+          characterId: character.id,
+          name: character.name,
+          tagline: character.tagline,
+          avatar: character.avatar,
+          last: last?.content || (last?.image ? "[picture]" : ""),
+          updatedAt: last?.createdAt ?? new Date().toISOString(),
+        });
+      }
     } catch {
       // ignore
     }
-  }, [backupKey, messages]);
+  }, [backupKey, messages, initialChat.id, character]);
 
   const history = () => messages.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content }));
   useEffect(() => {
@@ -158,7 +171,7 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
         {character.avatar ? <img src={character.avatar} alt="" className="h-9 w-9 rounded-full object-cover" /> : <span className="grid h-9 w-9 place-items-center rounded-full bg-[#ff2792] font-semibold">{character.name[0]}</span>}
         <div className="min-w-0 flex-1">
           <p className="truncate text-[16px] font-medium">{character.name}, {character.age}</p>
-          <p className="text-[11px] text-[#858585]">{status ? `model: ${status.llm}` : "…"}</p>
+          <p className="truncate text-[11px] text-[#858585]">{character.tagline} · <span className="text-[#ff6bb5]">{modelLabel}</span></p>
         </div>
         {status?.tts && (
           <button type="button" aria-label={autoVoice ? "Mute voice" : "Play voice"} onClick={() => setAutoVoice((v) => !v)} className="grid h-[38px] w-[38px] place-items-center rounded-full bg-white/10">

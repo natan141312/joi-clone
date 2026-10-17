@@ -33,6 +33,8 @@ export type Character = {
   imagePrompt: string;
   /** Data URL or /public path. */
   avatar?: string;
+  /** OpenRouter model id this expert runs on (see models.ts). */
+  model?: string;
   /** ElevenLabs voice id. Falls back to ELEVENLABS_DEFAULT_VOICE. */
   voiceId?: string;
   params: GenerationParams;

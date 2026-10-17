@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { DEFAULT_MODEL, MODEL_OPTIONS } from "@/lib/companion/models";
 import { CHARACTER_TAGS, DEFAULT_PARAMS, type Character, type CharacterTag } from "@/lib/companion/types";
 
 const FIELDS: { key: string; label: string; hint?: string; rows?: number; advanced?: boolean }[] = [
@@ -40,6 +41,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
   const [avatar, setAvatar] = useState<string | undefined>(initial?.avatar);
   const [tags, setTags] = useState<CharacterTag[]>(initial?.tags ?? []);
   const [style, setStyle] = useState<"realistic" | "anime">(initial?.style ?? "realistic");
+  const [model, setModel] = useState(initial?.model ?? DEFAULT_MODEL);
   const [notes, setNotes] = useState("");
   const [showForm, setShowForm] = useState(editing);
   const [generating, setGenerating] = useState(false);
@@ -96,7 +98,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
     const res = await fetch(editing ? `/api/characters/${initial?.id}` : "/api/characters", {
       method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...values, age: Number(values.age), avatar: avatar ?? "", params, tags, style, fictionalConfirmed: fictional }),
+      body: JSON.stringify({ ...values, age: Number(values.age), avatar: avatar ?? "", params, tags, style, model, fictionalConfirmed: fictional }),
     });
     if (!res.ok) {
       setSaving(false);
@@ -205,6 +207,18 @@ export function CharacterForm({ initial }: { initial?: Character }) {
               <input aria-label="Age" placeholder="Age" type="number" min={18} className={input} value={values.age} onChange={set("age")} required />
             </div>
           </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[14px] font-medium">AI model this expert runs on</span>
+            <select aria-label="AI model" className={input} value={model} onChange={(e) => setModel(e.target.value)}>
+              {MODEL_OPTIONS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.family} · {m.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-[12px] text-[#858585]">Uses OpenRouter when OPENROUTER_API_KEY is set; otherwise the free model answers.</span>
+          </label>
 
           <div className="flex flex-col gap-2">
             <span className="text-[14px] font-medium">Categories</span>

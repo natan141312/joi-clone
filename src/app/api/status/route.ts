@@ -1,5 +1,5 @@
 import { kv } from "@/lib/companion/kv";
-import { isMockLlm, llmConfig } from "@/lib/companion/llm";
+import { activeProvider, isMockLlm, llmConfig } from "@/lib/companion/llm";
 
 // Which backends are configured, so the UI can show/hide voice and picture controls.
 export async function GET() {
@@ -9,6 +9,7 @@ export async function GET() {
     tts: Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_DEFAULT_VOICE),
     stt: Boolean(process.env.STT_BASE_URL),
     images: true,
+    provider: activeProvider(),
     persistentStorage: kv.persistent,
   });
 }

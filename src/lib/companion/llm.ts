@@ -1,36 +1,73 @@
 import "server-only";
+import { DEFAULT_MODEL, FREE_MODEL_LABEL, modelInfo } from "./models";
 import type { LlmMessage } from "./prompt";
 import type { GenerationParams } from "./types";
 
-// Any OpenAI-compatible server works: text-generation-webui (--api), Ollama, LM Studio, vLLM, OpenRouter.
-// Without LLM_BASE_URL the free, keyless Pollinations endpoint is used so chat works out of the box.
-// LLM_BASE_URL=mock streams canned replies (useful for tests).
+// Provider order:
+// 1. OPENROUTER_API_KEY set -> each expert runs on its own model (GPT, Claude, Gemini, Llama, ...).
+// 2. LLM_BASE_URL set       -> any OpenAI-compatible server (text-generation-webui, Ollama, LM Studio, vLLM).
+//    LLM_BASE_URL=mock streams canned replies (useful for tests).
+// 3. Otherwise              -> the free, keyless Pollinations endpoint.
+// If the chosen model fails, the reply falls back to the free model so chat keeps working.
 const FREE_LLM_URL = "https://text.pollinations.ai/openai";
+const OPENROUTER_URL = (process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, "");
 
 export const llmConfig = {
+  openRouterKey: process.env.OPENROUTER_API_KEY ?? "",
   baseUrl: (process.env.LLM_BASE_URL || FREE_LLM_URL).replace(/\/$/, ""),
   apiKey: process.env.LLM_API_KEY ?? "",
   model: process.env.LLM_MODEL || (process.env.LLM_BASE_URL ? "local-model" : "openai"),
   vision: process.env.LLM_VISION === "true",
 };
 
-export function isMockLlm() {
-  return llmConfig.baseUrl === "mock";
+export type Provider = "openrouter" | "custom" | "free" | "mock";
+
+export function activeProvider(): Provider {
+  if (llmConfig.baseUrl === "mock") return "mock";
+  if (llmConfig.openRouterKey) return "openrouter";
+  if (process.env.LLM_BASE_URL) return "custom";
+  return "free";
 }
 
-/** Streams the assistant reply as plain text chunks. */
-export async function streamChat(messages: LlmMessage[], params: GenerationParams, signal?: AbortSignal): Promise<AsyncIterable<string>> {
-  if (isMockLlm()) return mockStream(messages);
+export function isMockLlm() {
+  return activeProvider() === "mock";
+}
 
-  const res = await fetch(`${llmConfig.baseUrl}/chat/completions`, {
+/** Human label for the model an expert actually runs on right now. */
+export function runningModelLabel(model?: string) {
+  const p = activeProvider();
+  if (p === "openrouter") return modelInfo(model).label;
+  if (p === "custom") return llmConfig.model;
+  if (p === "mock") return "mock";
+  return FREE_MODEL_LABEL;
+}
+
+type Target = { url: string; key: string; model: string; extraHeaders?: Record<string, string> };
+
+function targetFor(model?: string): Target {
+  const p = activeProvider();
+  if (p === "openrouter") {
+    return {
+      url: OPENROUTER_URL,
+      key: llmConfig.openRouterKey,
+      model: model || process.env.OPENROUTER_DEFAULT_MODEL || DEFAULT_MODEL,
+      extraHeaders: { "X-Title": "PRO AI Experts", ...(process.env.SITE_URL ? { "HTTP-Referer": process.env.SITE_URL } : {}) },
+    };
+  }
+  return { url: llmConfig.baseUrl, key: llmConfig.apiKey, model: llmConfig.model };
+}
+
+async function request(t: Target, messages: LlmMessage[], params: GenerationParams, signal?: AbortSignal) {
+  return fetch(`${t.url}/chat/completions`, {
     method: "POST",
     signal,
     headers: {
       "Content-Type": "application/json",
-      ...(llmConfig.apiKey ? { Authorization: `Bearer ${llmConfig.apiKey}` } : {}),
+      ...(t.key ? { Authorization: `Bearer ${t.key}` } : {}),
+      ...t.extraHeaders,
     },
     body: JSON.stringify({
-      model: llmConfig.model,
+      model: t.model,
       messages,
       stream: true,
       temperature: params.temperature,
@@ -38,9 +75,25 @@ export async function streamChat(messages: LlmMessage[], params: GenerationParam
       max_tokens: params.maxTokens,
     }),
   });
-  if (!res.ok || !res.body) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`LLM request failed (${res.status}): ${detail.slice(0, 300)}`);
+}
+
+/** Streams the assistant reply as plain text chunks, on the expert's model when one is configured. */
+export async function streamChat(
+  messages: LlmMessage[],
+  params: GenerationParams,
+  signal?: AbortSignal,
+  model?: string,
+): Promise<AsyncIterable<string>> {
+  if (isMockLlm()) return mockStream(messages);
+
+  let res = await request(targetFor(model), messages, params, signal).catch(() => null);
+  if ((!res?.ok || !res.body) && activeProvider() === "openrouter") {
+    // Model unavailable, out of credits, rate-limited...: answer with the free model instead.
+    res = await request({ url: FREE_LLM_URL, key: "", model: "openai" }, messages, params, signal).catch(() => null);
+  }
+  if (!res?.ok || !res.body) {
+    const detail = res ? await res.text().catch(() => "") : "network error";
+    throw new Error(`LLM request failed (${res?.status ?? "network"}): ${detail.slice(0, 300)}`);
   }
   return parseSse(res.body);
 }
@@ -79,8 +132,8 @@ async function* mockStream(messages: LlmMessage[]): AsyncIterable<string> {
 }
 
 /** Full (non-streamed) completion, built on streamChat so every provider works the same way. */
-export async function completeText(messages: LlmMessage[], params: GenerationParams, signal?: AbortSignal): Promise<string> {
+export async function completeText(messages: LlmMessage[], params: GenerationParams, signal?: AbortSignal, model?: string): Promise<string> {
   let out = "";
-  for await (const chunk of await streamChat(messages, params, signal)) out += chunk;
+  for await (const chunk of await streamChat(messages, params, signal, model)) out += chunk;
   return out.trim();
 }
