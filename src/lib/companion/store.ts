@@ -1,12 +1,16 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { DEFAULT_PARAMS, type Character, type CharacterInput, type Chat, type Message } from "./types";
 
 // Local JSON storage: data/companion/characters/<id>.json and data/companion/chats/<id>.json.
 // Swap this module for a database later; the API routes only use the exported functions.
-const ROOT = process.env.COMPANION_DATA_DIR ?? path.join(process.cwd(), "data", "companion");
+// Serverless hosts (Vercel) only allow writes under /tmp, and that storage is temporary per instance.
+const ROOT =
+  process.env.COMPANION_DATA_DIR ??
+  (process.env.VERCEL ? path.join(tmpdir(), "companion") : path.join(process.cwd(), "data", "companion"));
 const CHAR_DIR = path.join(ROOT, "characters");
 const CHAT_DIR = path.join(ROOT, "chats");
 
