@@ -31,6 +31,15 @@ export default async function RootLayout({
       dir={lang === "he" ? "rtl" : "ltr"}
       className={`${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* After a new deploy, a page cached from the old one can point at deleted CSS. Reload once if a stylesheet fails. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='LINK'&&t.rel==='stylesheet'){try{if(sessionStorage.getItem('pro_css_reload'))return;sessionStorage.setItem('pro_css_reload','1')}catch(_){}location.reload()}},true);",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-[#0f0f0f]">{children}</body>
     </html>
   );
