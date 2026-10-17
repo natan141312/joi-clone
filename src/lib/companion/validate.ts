@@ -1,4 +1,4 @@
-import { DEFAULT_PARAMS, type CharacterInput } from "./types";
+import { CHARACTER_TAGS, DEFAULT_PARAMS, type CharacterInput, type CharacterTag } from "./types";
 
 const LIMITS: Record<string, number> = {
   name: 60,
@@ -73,6 +73,15 @@ export function validateCharacter(body: unknown, { partial = false } = {}): Vali
       topP: num(p.topP, DEFAULT_PARAMS.topP, 0, 1),
       maxTokens: Math.round(num(p.maxTokens, DEFAULT_PARAMS.maxTokens, 16, 4000)),
     };
+  }
+
+  if (!partial || "tags" in b) {
+    const tags = Array.isArray(b.tags) ? b.tags : [];
+    out.tags = [...new Set(tags.filter((t): t is CharacterTag => CHARACTER_TAGS.includes(t as CharacterTag)))];
+  }
+
+  if (!partial || "style" in b) {
+    out.style = b.style === "anime" ? "anime" : "realistic";
   }
 
   if (errors.length) return { ok: false, errors };

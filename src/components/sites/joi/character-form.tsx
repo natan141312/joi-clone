@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DEFAULT_PARAMS } from "@/lib/companion/types";
+import { CHARACTER_TAGS, DEFAULT_PARAMS, type Character, type CharacterTag } from "@/lib/companion/types";
 
 const FIELDS: { key: string; label: string; hint?: string; rows?: number }[] = [
   { key: "tagline", label: "Tagline", hint: "Short label shown on the card" },
@@ -18,12 +18,22 @@ const FIELDS: { key: string; label: string; hint?: string; rows?: number }[] = [
 
 const input = "w-full rounded-[12px] border border-[#303030] bg-white/5 px-3 py-2 text-[14px] text-white outline-none focus:border-white/40";
 
-export function CharacterForm() {
+const TEXT_KEYS = ["name", "gender", ...FIELDS.map((f) => f.key)] as const;
+
+export function CharacterForm({ initial }: { initial?: Character }) {
   const router = useRouter();
-  const [values, setValues] = useState<Record<string, string>>({ name: "", age: "", gender: "female" });
-  const [params, setParams] = useState(DEFAULT_PARAMS);
-  const [avatar, setAvatar] = useState<string>();
-  const [fictional, setFictional] = useState(false);
+  const editing = Boolean(initial);
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    if (!initial) return { name: "", age: "", gender: "female" };
+    const v: Record<string, string> = { age: String(initial.age) };
+    for (const k of TEXT_KEYS) v[k] = String((initial as unknown as Record<string, unknown>)[k] ?? "");
+    return v;
+  });
+  const [params, setParams] = useState(initial?.params ?? DEFAULT_PARAMS);
+  const [avatar, setAvatar] = useState<string | undefined>(initial?.avatar);
+  const [tags, setTags] = useState<CharacterTag[]>(initial?.tags ?? []);
+  const [style, setStyle] = useState<"realistic" | "anime">(initial?.style ?? "realistic");
+  const [fictional, setFictional] = useState(editing);
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -41,10 +51,10 @@ export function CharacterForm() {
     e.preventDefault();
     setSaving(true);
     setErrors([]);
-    const res = await fetch("/api/characters", {
-      method: "POST",
+    const res = await fetch(editing ? `/api/characters/${initial?.id}` : "/api/characters", {
+      method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...values, age: Number(values.age), avatar, params, fictionalConfirmed: fictional }),
+      body: JSON.stringify({ ...values, age: Number(values.age), avatar: avatar ?? "", params, tags, style, fictionalConfirmed: fictional }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -53,12 +63,23 @@ export function CharacterForm() {
       return;
     }
     const character = (await res.json()) as { id: string };
-    router.push(`/chat/start/${character.id}`);
+    if (editing) {
+      router.push(`/character/${character.id}`);
+      router.refresh();
+    } else {
+      const chatRes = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId: character.id }),
+      });
+      const chat = (await chatRes.json().catch(() => ({}))) as { id?: string };
+      router.push(chat.id ? `/chat/${chat.id}` : `/character/${character.id}`);
+    }
   };
 
   return (
     <form onSubmit={submit} className="mx-auto flex w-full max-w-[720px] flex-col gap-4 px-4 py-8">
-      <h1 className="text-[28px] font-bold">Create a character</h1>
+      <h1 className="text-[28px] font-bold">{editing ? `Edit ${initial?.name}` : "Create a character"}</h1>
 
       <div className="flex items-center gap-4">
         <label className="grid h-24 w-24 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-[12px] bg-white/10 text-[12px] text-[#aeaeae]">
@@ -74,6 +95,31 @@ export function CharacterForm() {
             <option value="male">Male</option>
             <option value="non-binary">Non-binary</option>
           </select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[14px] font-medium">Style</span>
+        <div className="flex gap-2">
+          {(["realistic", "anime"] as const).map((st) => (
+            <button key={st} type="button" aria-pressed={style === st} onClick={() => setStyle(st)} className={`rounded-full px-4 py-1.5 text-[14px] capitalize ${style === st ? "bg-[#ff2792]" : "bg-white/10"}`}>
+              {st}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[14px] font-medium">Categories</span>
+        <div className="flex flex-wrap gap-2">
+          {CHARACTER_TAGS.map((tag) => {
+            const on = tags.includes(tag);
+            return (
+              <button key={tag} type="button" aria-pressed={on} onClick={() => setTags((ts) => (on ? ts.filter((x) => x !== tag) : [...ts, tag]))} className={`rounded-full px-3 py-1 text-[13px] ${on ? "bg-white text-black" : "bg-white/10"}`}>
+                {tag}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -104,7 +150,7 @@ export function CharacterForm() {
         ))}
       </fieldset>
 
-      <label className="flex items-start gap-2 text-[14px]">
+      <label className={`flex items-start gap-2 text-[14px] ${editing ? "hidden" : ""}`}>
         <input type="checkbox" checked={fictional} onChange={(e) => setFictional(e.target.checked)} className="mt-1" />
         This character is fictional, an adult (18+), and not based on a real person.
       </label>
@@ -116,7 +162,7 @@ export function CharacterForm() {
       )}
 
       <button disabled={saving} className="h-11 rounded-full bg-[#ff2792] text-[15px] font-semibold disabled:opacity-50">
-        {saving ? "Saving…" : "Create and start chatting"}
+        {saving ? "Saving…" : editing ? "Save changes" : "Create and start chatting"}
       </button>
     </form>
   );

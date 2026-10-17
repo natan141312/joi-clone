@@ -1,13 +1,16 @@
+import { ensureViewerId, getCurrentUser, getViewerId } from "@/lib/companion/auth";
 import { createChat, getCharacter, listChats } from "@/lib/companion/store";
 
 export async function GET() {
-  return Response.json(await listChats());
+  const viewer = await getViewerId();
+  return Response.json(viewer ? await listChats(viewer) : []);
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { characterId?: string; userName?: string };
+  const body = (await req.json().catch(() => ({}))) as { characterId?: string };
   const character = body.characterId ? await getCharacter(body.characterId) : null;
   if (!character) return Response.json({ error: "Unknown character" }, { status: 404 });
-  const userName = (body.userName ?? "").trim().slice(0, 40) || "You";
-  return Response.json(await createChat(character, userName), { status: 201 });
+  const ownerId = await ensureViewerId();
+  const user = await getCurrentUser();
+  return Response.json(await createChat(character, user?.name ?? "You", ownerId), { status: 201 });
 }

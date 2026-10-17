@@ -7,6 +7,11 @@ export type GenerationParams = {
   maxTokens: number;
 };
 
+export const CHARACTER_TAGS = [
+  "Anime", "LGBT+", "Fantasy", "Dominant", "Straight", "Kinky", "Trans", "Mommy", "Lesbian", "Gay",
+] as const;
+export type CharacterTag = (typeof CHARACTER_TAGS)[number];
+
 export type Character = {
   id: string;
   name: string;
@@ -26,10 +31,24 @@ export type Character = {
   /** ElevenLabs voice id. Falls back to ELEVENLABS_DEFAULT_VOICE. */
   voiceId?: string;
   params: GenerationParams;
+  tags: CharacterTag[];
+  style: "realistic" | "anime";
+  /** User id of the creator; empty for built-in "Joi Original" characters. */
+  ownerId?: string;
   createdAt: string;
 };
 
 export type CharacterInput = Omit<Character, "id" | "createdAt">;
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+};
+
+export type PublicUser = Pick<User, "id" | "name" | "email">;
 
 export type Message = {
   id: string;
@@ -43,6 +62,8 @@ export type Message = {
 export type Chat = {
   id: string;
   characterId: string;
+  /** Owner of the chat; anonymous visitors get a browser id cookie instead. */
+  ownerId: string;
   userName: string;
   messages: Message[];
   createdAt: string;

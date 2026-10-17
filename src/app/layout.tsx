@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Outfit } from "next/font/google";
+import { cookies } from "next/headers";
+import { LANG_COOKIE, parseLang } from "@/components/sites/joi/i18n";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -17,17 +19,19 @@ export const metadata: Metadata = {
   description: "Local reference rebuild of the joi.com home page layout",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = parseLang((await cookies()).get(LANG_COOKIE)?.value);
   return (
     <html
-      lang="en"
+      lang={lang}
+      dir={lang === "he" ? "rtl" : "ltr"}
       className={`${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0f0f0f]">{children}</body>
     </html>
   );
 }

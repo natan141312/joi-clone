@@ -1,13 +1,13 @@
 import { generateImage } from "@/lib/companion/media";
-import { appendMessages, getCharacter, getChat } from "@/lib/companion/store";
+import { getOwnedChat } from "@/lib/companion/access";
+import { appendMessages } from "@/lib/companion/store";
 
 // POST { prompt? } -> the character "sends a picture": generated from the character's imagePrompt plus the request.
 export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/image">) {
   const { id } = await ctx.params;
-  const chat = await getChat(id);
-  if (!chat) return Response.json({ error: "Chat not found" }, { status: 404 });
-  const character = await getCharacter(chat.characterId);
-  if (!character) return Response.json({ error: "Character not found" }, { status: 404 });
+  const owned = await getOwnedChat(id);
+  if (!owned) return Response.json({ error: "Chat not found" }, { status: 404 });
+  const { character } = owned;
 
   const body = (await req.json().catch(() => ({}))) as { prompt?: string };
   const extra = (body.prompt ?? "").trim().slice(0, 300);

@@ -1,9 +1,12 @@
 import { CharacterForm } from "@/components/sites/joi/character-form";
+import { PageShell } from "@/components/sites/joi/page-shell";
+import { getPageContext } from "@/lib/companion/page-context";
 
-export default function CreateCharacterPage() {
+export default async function CreateCharacterPage() {
+  const { user, lang } = await getPageContext();
   return (
-    <main className="min-h-screen bg-[#0f0f0f] text-white">
+    <PageShell user={user} lang={lang}>
       <CharacterForm />
-    </main>
+    </PageShell>
   );
 }

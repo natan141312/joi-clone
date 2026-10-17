@@ -1,6 +1,7 @@
 import { llmConfig, streamChat } from "@/lib/companion/llm";
 import { buildMessages } from "@/lib/companion/prompt";
-import { appendMessages, getCharacter } from "@/lib/companion/store";
+import { getOwnedChat } from "@/lib/companion/access";
+import { appendMessages } from "@/lib/companion/store";
 
 const MAX_TEXT = 4000;
 const MAX_IMAGE = 4_000_000;
@@ -13,10 +14,11 @@ export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/mess
   const image = typeof body.image === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(body.image) && body.image.length <= MAX_IMAGE ? body.image : undefined;
   if (!text && !image) return Response.json({ error: "Message is empty" }, { status: 400 });
 
+  const owned = await getOwnedChat(id);
+  if (!owned) return Response.json({ error: "Chat not found" }, { status: 404 });
+  const { character } = owned;
   const chat = await appendMessages(id, [{ role: "user", content: text, image }]);
   if (!chat) return Response.json({ error: "Chat not found" }, { status: 404 });
-  const character = await getCharacter(chat.characterId);
-  if (!character) return Response.json({ error: "Character not found" }, { status: 404 });
 
   let chunks: AsyncIterable<string>;
   try {
