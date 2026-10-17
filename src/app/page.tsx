@@ -1,5 +1,6 @@
 import { JoiHome } from "@/components/sites/joi/joi-home";
 import { DEFAULT_FILTERS, type HomeCard, type HomeFilters } from "@/components/sites/joi/data";
+import { avatarFor } from "@/lib/companion/avatar";
 import { getPageContext } from "@/lib/companion/page-context";
 import { characterStats, listCharacters } from "@/lib/companion/store";
 
@@ -22,7 +23,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
     creator: !c.ownerId ? "original" : c.ownerId === viewerId ? "mine" : "community",
     chats: stats[c.id]?.chats ?? 0,
     messages: stats[c.id]?.messages ?? 0,
-    image: c.avatar,
+    image: avatarFor(c),
   }));
   return <JoiHome cards={cards} user={user} lang={lang} initialFilters={initialFilters} />;
 }

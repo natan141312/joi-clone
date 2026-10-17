@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CharacterActions } from "@/components/sites/joi/character-actions";
 import { PageShell } from "@/components/sites/joi/page-shell";
+import { avatarFor } from "@/lib/companion/avatar";
 import { getPageContext } from "@/lib/companion/page-context";
 import { characterStats, getCharacter } from "@/lib/companion/store";
 
@@ -26,7 +27,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
     <PageShell user={ctx.user} lang={ctx.lang}>
       <main className="mx-auto grid max-w-[960px] gap-8 px-4 py-8 md:grid-cols-[300px_1fr]">
         <div className="aspect-[229/318] overflow-hidden rounded-[12px] bg-gradient-to-b from-[#5a2342] to-[#1a1a1a]">
-          {character.avatar && <img src={character.avatar} alt="" className="h-full w-full object-cover" />}
+          <img src={avatarFor(character)} alt="" className="h-full w-full object-cover" />
         </div>
         <div className="flex flex-col gap-4">
           <div>

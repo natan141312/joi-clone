@@ -3,16 +3,19 @@ import type { LlmMessage } from "./prompt";
 import type { GenerationParams } from "./types";
 
 // Any OpenAI-compatible server works: text-generation-webui (--api), Ollama, LM Studio, vLLM, OpenRouter.
-// Without LLM_BASE_URL a mock provider streams a canned reply so the app runs end to end.
+// Without LLM_BASE_URL the free, keyless Pollinations endpoint is used so chat works out of the box.
+// LLM_BASE_URL=mock streams canned replies (useful for tests).
+const FREE_LLM_URL = "https://text.pollinations.ai/openai";
+
 export const llmConfig = {
-  baseUrl: process.env.LLM_BASE_URL?.replace(/\/$/, ""),
+  baseUrl: (process.env.LLM_BASE_URL || FREE_LLM_URL).replace(/\/$/, ""),
   apiKey: process.env.LLM_API_KEY ?? "",
-  model: process.env.LLM_MODEL ?? "local-model",
+  model: process.env.LLM_MODEL || (process.env.LLM_BASE_URL ? "local-model" : "openai"),
   vision: process.env.LLM_VISION === "true",
 };
 
 export function isMockLlm() {
-  return !llmConfig.baseUrl;
+  return llmConfig.baseUrl === "mock";
 }
 
 /** Streams the assistant reply as plain text chunks. */

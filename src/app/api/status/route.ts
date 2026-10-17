@@ -7,6 +7,6 @@ export async function GET() {
     vision: llmConfig.vision,
     tts: Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_DEFAULT_VOICE),
     stt: Boolean(process.env.STT_BASE_URL),
-    images: Boolean(process.env.SD_BASE_URL),
+    images: true,
   });
 }

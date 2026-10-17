@@ -43,6 +43,7 @@ async function readAll<T>(dir: string): Promise<T[]> {
 // Built-in "Joi Original" characters: fictional adults with neutral descriptions.
 const SEED: Omit<CharacterInput, "params">[] = [
   {
+    avatar: "/sites/joi/characters/lara.jpg",
     name: "Lara", age: 26, gender: "female", tagline: "Warm and Curious", style: "realistic", tags: ["Straight"],
     appearance: "Shoulder-length brown hair, green eyes, casual style.",
     traits: "Warm, playful, attentive, a little sarcastic, loves cooking and old films.",
@@ -53,6 +54,7 @@ const SEED: Omit<CharacterInput, "params">[] = [
     imagePrompt: "portrait photo of a woman with shoulder-length brown hair and green eyes, casual sweater, warm indoor light",
   },
   {
+    avatar: "/sites/joi/characters/kai.jpg",
     name: "Kai", age: 29, gender: "male", tagline: "Night Shift Hero", style: "realistic", tags: ["Straight"],
     appearance: "Short dark hair, stubble, firefighter T-shirt.",
     traits: "Brave, calm, dry humor, protective, a good listener.",
@@ -63,6 +65,7 @@ const SEED: Omit<CharacterInput, "params">[] = [
     imagePrompt: "portrait photo of a man with short dark hair and stubble wearing a navy T-shirt, city at night",
   },
   {
+    avatar: "/sites/joi/characters/yuki.jpg",
     name: "Yuki", age: 22, gender: "female", tagline: "Cosplay Streamer", style: "anime", tags: ["Anime"],
     appearance: "Anime style, short silver bob, violet eyes, oversized hoodie.",
     traits: "Energetic, nerdy, competitive gamer, loves puns.",
@@ -73,6 +76,7 @@ const SEED: Omit<CharacterInput, "params">[] = [
     imagePrompt: "anime illustration of a young adult woman with a short silver bob and violet eyes in an oversized hoodie, gaming room, neon lights",
   },
   {
+    avatar: "/sites/joi/characters/selene.jpg",
     name: "Selene", age: 31, gender: "female", tagline: "Moonlit Sorceress", style: "anime", tags: ["Fantasy", "Dominant"],
     appearance: "Anime style, long black hair, silver circlet, dark blue robes.",
     traits: "Confident, commanding, mysterious, secretly kind.",
@@ -83,6 +87,7 @@ const SEED: Omit<CharacterInput, "params">[] = [
     imagePrompt: "anime illustration of an adult sorceress with long black hair and a silver circlet in dark blue robes, candlelit library",
   },
   {
+    avatar: "/sites/joi/characters/alex.jpg",
     name: "Alex", age: 27, gender: "non-binary", tagline: "Indie Musician", style: "realistic", tags: ["LGBT+"],
     appearance: "Curly auburn hair, freckles, vintage denim jacket.",
     traits: "Creative, thoughtful, funny, a bit chaotic.",
@@ -93,6 +98,7 @@ const SEED: Omit<CharacterInput, "params">[] = [
     imagePrompt: "portrait photo of a person with curly auburn hair and freckles in a vintage denim jacket, small concert venue",
   },
   {
+    avatar: "/sites/joi/characters/marco.jpg",
     name: "Marco", age: 34, gender: "male", tagline: "Chef With Opinions", style: "realistic", tags: ["Gay", "LGBT+"],
     appearance: "Tall, dark curly hair, chef's apron, tattoos on forearms.",
     traits: "Passionate, blunt, generous, terrible at small talk.",
@@ -111,9 +117,12 @@ async function ensureSeed() {
   for (const c of SEED) await createCharacter({ ...c, params: DEFAULT_PARAMS });
 }
 
+const SEED_AVATARS = new Map(SEED.map((c) => [c.name, c.avatar]));
+
 function normalize(c: Character): Character {
-  // Older records may predate tags/style.
-  return { ...c, tags: c.tags ?? [], style: c.style ?? "realistic" };
+  // Older records may predate tags/style/avatars.
+  const avatar = c.avatar || (!c.ownerId ? SEED_AVATARS.get(c.name) : undefined);
+  return { ...c, tags: c.tags ?? [], style: c.style ?? "realistic", avatar };
 }
 
 // ---- characters ----

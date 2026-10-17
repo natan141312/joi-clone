@@ -16,7 +16,7 @@ const ACCENT = "#ff2792";
 const HUES = [330, 200, 280, 20, 160, 250, 50, 310];
 
 function Media({ i, src, className = "" }: { i: number; src?: string; className?: string }) {
-  if (src) return <img src={src} alt="" className={`${className} object-cover`} />;
+  if (src) return <img src={src} alt="" loading="lazy" className={`${className} object-cover object-top`} />;
   const h = HUES[i % HUES.length];
   return (
     <div

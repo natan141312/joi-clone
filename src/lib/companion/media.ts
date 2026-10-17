@@ -1,4 +1,5 @@
 import "server-only";
+import { freeImageUrl } from "./avatar";
 
 // Voice out: ElevenLabs text-to-speech (as in the video's elevenlabs_tts extension).
 export async function textToSpeech(text: string, voiceId?: string): Promise<Response> {
@@ -32,10 +33,19 @@ export async function speechToText(audio: Blob): Promise<{ text?: string; error?
   return { text: json.text?.trim() ?? "", status: 200 };
 }
 
+export async function freeImage(prompt: string): Promise<{ image?: string; error?: string; status: number }> {
+  const res = await fetch(freeImageUrl(prompt, Math.floor(Math.random() * 1e6), 512, 704)).catch(() => null);
+  if (!res?.ok) return { error: `Image generation failed (${res?.status ?? "network"})`, status: 502 };
+  const type = res.headers.get("content-type") ?? "image/jpeg";
+  if (!type.startsWith("image/")) return { error: "Image generation returned no image", status: 502 };
+  const b64 = Buffer.from(await res.arrayBuffer()).toString("base64");
+  return { image: `data:${type};base64,${b64}`, status: 200 };
+}
+
 // Pictures: Stable Diffusion via the AUTOMATIC1111 / Forge API (as in the video's sd_api_pictures extension).
 export async function generateImage(prompt: string): Promise<{ image?: string; error?: string; status: number }> {
   const base = process.env.SD_BASE_URL?.replace(/\/$/, "");
-  if (!base) return { error: "Image generation not configured (SD_BASE_URL)", status: 501 };
+  if (!base) return freeImage(prompt);
   const res = await fetch(`${base}/sdapi/v1/txt2img`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
