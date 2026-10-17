@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/sites/joi/logout-button";
+import { t } from "@/components/sites/joi/i18n";
 import { PageShell } from "@/components/sites/joi/page-shell";
 import { getPageContext } from "@/lib/companion/page-context";
 import { listCharacters, listChats } from "@/lib/companion/store";
@@ -25,15 +26,16 @@ export default async function AccountPage() {
         <div className="grid grid-cols-2 gap-3">
           <Link href="/?creator=mine" className="rounded-[14px] bg-[#1a1a1a] p-4 hover:bg-white/10">
             <p className="text-[28px] font-bold">{mine.length}</p>
-            <p className="text-[13px] text-[#aeaeae]">My experts</p>
+            <p className="text-[13px] text-[#aeaeae]">{t(lang, "My experts")}</p>
           </Link>
           <Link href="/chats" className="rounded-[14px] bg-[#1a1a1a] p-4 hover:bg-white/10">
             <p className="text-[28px] font-bold">{chats.length}</p>
-            <p className="text-[13px] text-[#aeaeae]">My chats</p>
+            <p className="text-[13px] text-[#aeaeae]">{t(lang, "My chats")}</p>
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/generate/character" className="rounded-full bg-[#ff2792] px-5 py-2.5 text-[14px] font-semibold">Create an expert</Link>
+          <Link href="/generate/character" className="rounded-full bg-[#ff2792] px-5 py-2.5 text-[14px] font-semibold">{t(lang, "Create an expert")}</Link>
+          <Link href="/hub" className="rounded-full bg-white/10 px-5 py-2.5 text-[14px] font-medium hover:bg-white/20">{t(lang, "Life Hub")}</Link>
           <LogoutButton />
         </div>
       </main>

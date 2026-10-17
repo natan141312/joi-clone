@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { DEFAULT_MODEL, MODEL_OPTIONS } from "@/lib/companion/models";
 import { CHARACTER_TAGS, DEFAULT_PARAMS, type Character, type CharacterTag } from "@/lib/companion/types";
+import { useT } from "./lang-context";
 
 const FIELDS: { key: string; label: string; hint?: string; rows?: number; advanced?: boolean }[] = [
   { key: "tagline", label: "Title", hint: "Job title shown on the card, e.g. Tax Lawyer" },
@@ -30,6 +31,7 @@ type Draft = Record<string, unknown> & { tags?: CharacterTag[]; age?: number };
 
 export function CharacterForm({ initial }: { initial?: Character }) {
   const router = useRouter();
+  const { tr } = useT();
   const editing = Boolean(initial);
   const [values, setValues] = useState<Record<string, string>>(() => {
     if (!initial) return { name: "", age: "", gender: "female", expertise: "" };
@@ -62,7 +64,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
 
   const generate = async () => {
     if (!values.expertise.trim()) {
-      setErrors(["Enter a field of expertise first"]);
+      setErrors([tr("Enter a field of expertise first")]);
       return;
     }
     setGenerating(true);
@@ -75,7 +77,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
     }).catch(() => null);
     setGenerating(false);
     if (!res?.ok) {
-      setErrors(["Could not generate right now. Try again or fill the fields yourself."]);
+      setErrors([tr("Could not generate right now. Try again or fill the fields yourself.")]);
       setShowForm(true);
       return;
     }
@@ -87,7 +89,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
       return next;
     });
     if (draft.tags?.length) setTags(draft.tags);
-    setGenInfo(generated ? "Generated with AI, including the expert profile (Markdown). Review and edit anything, then create." : "The AI was busy, so a basic template was filled in. Edit it or generate again.");
+    setGenInfo(generated ? tr("Generated with AI, including the expert profile (Markdown). Review and edit anything, then create.") : tr("The AI was busy, so a basic template was filled in. Edit it or generate again."));
     setShowForm(true);
   };
 
@@ -103,7 +105,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
     if (!res.ok) {
       setSaving(false);
       const body = (await res.json().catch(() => ({}))) as { errors?: string[] };
-      setErrors(body.errors ?? ["Could not save the character"]);
+      setErrors(body.errors ?? [tr("Could not save the expert")]);
       return;
     }
     const character = (await res.json()) as { id: string };
@@ -123,26 +125,26 @@ export function CharacterForm({ initial }: { initial?: Character }) {
 
   const fieldInput = (f: (typeof FIELDS)[number]) => (
     <label key={f.key} className="flex flex-col gap-1">
-      <span className="text-[14px] font-medium">{f.label}</span>
+      <span className="text-[14px] font-medium">{tr(f.label)}</span>
       {f.rows ? (
-        <textarea rows={f.rows} placeholder={f.hint} className={input} value={values[f.key] ?? ""} onChange={set(f.key)} />
+        <textarea rows={f.rows} placeholder={f.hint ? tr(f.hint) : undefined} className={input} value={values[f.key] ?? ""} onChange={set(f.key)} />
       ) : (
-        <input placeholder={f.hint} className={input} value={values[f.key] ?? ""} onChange={set(f.key)} />
+        <input placeholder={f.hint ? tr(f.hint) : undefined} className={input} value={values[f.key] ?? ""} onChange={set(f.key)} />
       )}
     </label>
   );
 
   return (
     <form onSubmit={submit} className="mx-auto flex w-full max-w-[720px] flex-col gap-4 px-4 py-8">
-      <h1 className="text-[28px] font-bold">{editing ? `Edit ${initial?.name}` : "Create your AI expert"}</h1>
+      <h1 className="text-[28px] font-bold">{editing ? `${tr("Edit")} ${initial?.name}` : tr("Create your AI expert")}</h1>
 
       {/* Step 1: field of expertise -> AI writes the whole profile */}
       <section className="flex flex-col gap-3 rounded-[16px] bg-gradient-to-br from-[#ff2792]/20 to-white/5 p-4 ring-1 ring-white/10">
         <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-semibold">Field of expertise</span>
+          <span className="text-[14px] font-semibold">{tr("Field of expertise")}</span>
           <input
-            aria-label="Field of expertise"
-            placeholder="e.g. Tax law, React development, marathon training…"
+            aria-label={tr("Field of expertise")}
+            placeholder={tr("e.g. Tax law, React development, marathon training…")}
             className={`${input} h-11 text-[15px]`}
             value={values.expertise}
             onChange={set("expertise")}
@@ -154,23 +156,23 @@ export function CharacterForm({ initial }: { initial?: Character }) {
           <>
             <div className="flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
-                <button key={ex} type="button" onClick={() => setValues((v) => ({ ...v, expertise: ex }))} className="rounded-full bg-white/10 px-3 py-1 text-[12px] hover:bg-white/20">
-                  {ex}
+                <button key={ex} type="button" onClick={() => setValues((v) => ({ ...v, expertise: tr(ex) }))} className="rounded-full bg-white/10 px-3 py-1 text-[12px] hover:bg-white/20">
+                  {tr(ex)}
                 </button>
               ))}
             </div>
             <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
               <select aria-label="Gender" className={input} value={values.gender} onChange={set("gender")}>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="non-binary">Non-binary</option>
+                <option value="female">{tr("Female")}</option>
+                <option value="male">{tr("Male")}</option>
+                <option value="non-binary">{tr("Non-binary")}</option>
               </select>
-              <input aria-label="Extra wishes" placeholder="Extra wishes (optional): tone, background, language…" className={input} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
+              <input aria-label={tr("Extra wishes")} placeholder={tr("Extra wishes (optional): tone, background, language…")} className={input} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {(["realistic", "anime"] as const).map((st) => (
                 <button key={st} type="button" aria-pressed={style === st} onClick={() => setStyle(st)} className={`rounded-full px-4 py-1.5 text-[13px] capitalize ${style === st ? "bg-white text-black" : "bg-white/10"}`}>
-                  {st}
+                  {tr(st === "realistic" ? "Realistic" : "Anime")}
                 </button>
               ))}
               <button
@@ -180,12 +182,12 @@ export function CharacterForm({ initial }: { initial?: Character }) {
                 className="ml-auto flex h-10 items-center gap-2 rounded-full bg-[#ff2792] px-5 text-[14px] font-semibold disabled:opacity-60 rtl:ml-0 rtl:mr-auto"
               >
                 <Sparkles size={16} />
-                {generating ? "Generating…" : showForm ? "Generate again" : "Generate with AI"}
+                {generating ? tr("Generating…") : showForm ? tr("Generate again") : tr("Generate with AI")}
               </button>
             </div>
             {!showForm && (
               <button type="button" onClick={() => setShowForm(true)} className="self-start text-[12px] text-[#aeaeae] underline">
-                or fill in the profile yourself
+                {tr("or fill in the profile yourself")}
               </button>
             )}
           </>
@@ -199,35 +201,35 @@ export function CharacterForm({ initial }: { initial?: Character }) {
           <div className="flex items-center gap-4">
             <label className="grid h-24 w-24 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-[12px] bg-white/10 text-center text-[11px] text-[#aeaeae]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : "Upload photo (or one is generated)"}
+              {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : tr("Upload photo (or one is generated)")}
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onAvatar(e.target.files?.[0])} />
             </label>
             <div className="grid flex-1 grid-cols-[1fr_90px] gap-2">
-              <input aria-label="Name" placeholder="Name" className={input} value={values.name} onChange={set("name")} required />
-              <input aria-label="Age" placeholder="Age" type="number" min={18} className={input} value={values.age} onChange={set("age")} required />
+              <input aria-label={tr("Name")} placeholder={tr("Name")} className={input} value={values.name} onChange={set("name")} required />
+              <input aria-label={tr("Age")} placeholder={tr("Age")} type="number" min={18} className={input} value={values.age} onChange={set("age")} required />
             </div>
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-medium">AI model this expert runs on</span>
-            <select aria-label="AI model" className={input} value={model} onChange={(e) => setModel(e.target.value)}>
+            <span className="text-[14px] font-medium">{tr("AI model this expert runs on")}</span>
+            <select aria-label={tr("AI model")} className={input} value={model} onChange={(e) => setModel(e.target.value)}>
               {MODEL_OPTIONS.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.family} · {m.label}
                 </option>
               ))}
             </select>
-            <span className="text-[12px] text-[#858585]">Uses OpenRouter when OPENROUTER_API_KEY is set; otherwise the free model answers.</span>
+            <span className="text-[12px] text-[#858585]">{tr("Uses OpenRouter when OPENROUTER_API_KEY is set; otherwise the free model answers.")}</span>
           </label>
 
           <div className="flex flex-col gap-2">
-            <span className="text-[14px] font-medium">Categories</span>
+            <span className="text-[14px] font-medium">{tr("Categories")}</span>
             <div className="flex flex-wrap gap-2">
               {CHARACTER_TAGS.map((tag) => {
                 const on = tags.includes(tag);
                 return (
                   <button key={tag} type="button" aria-pressed={on} onClick={() => setTags((ts) => (on ? ts.filter((x) => x !== tag) : [...ts, tag]))} className={`rounded-full px-3 py-1 text-[13px] ${on ? "bg-white text-black" : "bg-white/10"}`}>
-                    {tag}
+                    {tr(tag)}
                   </button>
                 );
               })}
@@ -237,11 +239,11 @@ export function CharacterForm({ initial }: { initial?: Character }) {
           {FIELDS.filter((f) => !f.advanced).map(fieldInput)}
 
           <details className="rounded-[12px] border border-[#303030] p-3">
-            <summary className="cursor-pointer text-[14px] font-medium">Advanced</summary>
+            <summary className="cursor-pointer text-[14px] font-medium">{tr("Advanced")}</summary>
             <div className="mt-3 flex flex-col gap-4">
               {FIELDS.filter((f) => f.advanced).map(fieldInput)}
               <fieldset className="grid grid-cols-3 gap-3">
-                <legend className="mb-1 text-[14px] font-medium">Answer settings</legend>
+                <legend className="mb-1 text-[14px] font-medium">{tr("Answer settings")}</legend>
                 {(
                   [
                     ["temperature", "Creativity", 0, 2, 0.05],
@@ -250,7 +252,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
                   ] as const
                 ).map(([k, label, min, max, step]) => (
                   <label key={k} className="flex flex-col gap-1 text-[12px] text-[#aeaeae]">
-                    {label}: {params[k]}
+                    {tr(label)}: {params[k]}
                     <input type="range" min={min} max={max} step={step} value={params[k]} onChange={(e) => setParams((p) => ({ ...p, [k]: Number(e.target.value) }))} />
                   </label>
                 ))}
@@ -260,7 +262,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
 
           <label className={`flex items-start gap-2 text-[14px] ${editing ? "hidden" : ""}`}>
             <input type="checkbox" checked={fictional} onChange={(e) => setFictional(e.target.checked)} className="mt-1" />
-            This expert is a fictional AI character and not based on a real person.
+            {tr("This expert is a fictional AI character and not based on a real person.")}
           </label>
         </>
       )}
@@ -273,7 +275,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
 
       {showForm && (
         <button disabled={saving} className="h-11 rounded-full bg-[#ff2792] text-[15px] font-semibold disabled:opacity-50">
-          {saving ? "Creating… (generating portrait)" : editing ? "Save changes" : "Create and start chatting"}
+          {saving ? tr("Creating… (generating portrait)") : editing ? tr("Save changes") : tr("Create and start chatting")}
         </button>
       )}
     </form>

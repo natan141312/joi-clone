@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChatsList } from "@/components/sites/joi/chats-list";
+import { t } from "@/components/sites/joi/i18n";
 import { PageShell } from "@/components/sites/joi/page-shell";
 import { avatarFor } from "@/lib/companion/avatar";
 import { getPageContext } from "@/lib/companion/page-context";
@@ -35,10 +36,10 @@ export default async function ChatsPage() {
   return (
     <PageShell user={user} lang={lang}>
       <main className="mx-auto max-w-[760px] px-4 py-8">
-        <h1 className="mb-4 text-[28px] font-bold">Chats</h1>
+        <h1 className="mb-4 text-[28px] font-bold">{t(lang, "Chats")}</h1>
         {!user && (
           <p className="mb-4 rounded-[12px] bg-white/5 p-3 text-[13px] text-[#aeaeae]">
-            Chats are saved in this browser. <Link href="/signup" className="text-white underline">Sign up</Link> to keep them in your account.
+            {t(lang, "Chats are saved in this browser.")} <Link href="/signup" className="text-white underline">{t(lang, "Sign up")}</Link> {t(lang, "to keep them in your account.")}
           </p>
         )}
         <ChatsList serverChats={serverChats} />

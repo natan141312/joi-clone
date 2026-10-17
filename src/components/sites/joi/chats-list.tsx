@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { useT } from "./lang-context";
 import { readLocalChats, removeLocalChat, type LocalChat } from "./local-chats";
 
 /** Server chats merged with the browser's own chat index (newest first). */
@@ -18,6 +19,7 @@ const serverSnapshot = () => "[]";
 export function ChatsList({ serverChats }: { serverChats: LocalChat[] }) {
   const localJson = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   const [removed, setRemoved] = useState<string[]>([]);
+  const { tr } = useT();
 
   const chats = useMemo(() => {
     const byId = new Map(serverChats.map((c) => [c.id, c]));
@@ -30,7 +32,7 @@ export function ChatsList({ serverChats }: { serverChats: LocalChat[] }) {
   }, [serverChats, localJson, removed]);
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this chat?")) return;
+    if (!confirm(tr("Delete this chat?"))) return;
     await fetch(`/api/chats/${id}`, { method: "DELETE" }).catch(() => null);
     removeLocalChat(id);
     setRemoved((r) => [...r, id]);
@@ -39,7 +41,7 @@ export function ChatsList({ serverChats }: { serverChats: LocalChat[] }) {
   if (chats.length === 0) {
     return (
       <p className="text-[#aeaeae]">
-        No chats yet. <Link href="/" className="text-white underline">Pick an expert</Link>.
+        {tr("No chats yet.")} <Link href="/" className="text-white underline">{tr("Pick an expert")}</Link>.
       </p>
     );
   }
@@ -60,7 +62,7 @@ export function ChatsList({ serverChats }: { serverChats: LocalChat[] }) {
             <p dir="auto" className="truncate text-[13px] text-[#858585]">{c.last}</p>
           </Link>
           <span className="hidden text-[12px] text-[#757575] sm:block">{new Date(c.updatedAt).toLocaleDateString()}</span>
-          <button type="button" aria-label="Delete chat" onClick={() => remove(c.id)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#858585] hover:bg-white/10 hover:text-white">
+          <button type="button" aria-label={tr("Delete chat")} onClick={() => remove(c.id)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#858585] hover:bg-white/10 hover:text-white">
             <Trash2 size={16} />
           </button>
         </li>
