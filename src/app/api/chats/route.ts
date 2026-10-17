@@ -12,5 +12,5 @@ export async function POST(req: Request) {
   if (!character) return Response.json({ error: "Unknown character" }, { status: 404 });
   const ownerId = await ensureViewerId();
   const user = await getCurrentUser();
-  return Response.json(await createChat(character, user?.name ?? "You", ownerId), { status: 201 });
+  return Response.json(await createChat(character, user?.name ?? "friend", ownerId), { status: 201 });
 }

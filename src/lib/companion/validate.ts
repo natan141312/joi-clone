@@ -4,6 +4,7 @@ const LIMITS: Record<string, number> = {
   name: 60,
   gender: 40,
   tagline: 80,
+  expertise: 120,
   appearance: 2000,
   traits: 2000,
   description: 4000,
@@ -45,6 +46,10 @@ export function validateCharacter(body: unknown, { partial = false } = {}): Vali
 
   if (!partial || "name" in b) {
     if (!out.name) errors.push("name is required");
+  }
+
+  if (!partial || "expertise" in b) {
+    if (!out.expertise) errors.push("expertise (field) is required");
   }
 
   if (!partial || "age" in b) {

@@ -7,8 +7,9 @@ export type GenerationParams = {
   maxTokens: number;
 };
 
+// Expertise categories (shown as the category filter on Explore).
 export const CHARACTER_TAGS = [
-  "Anime", "LGBT+", "Fantasy", "Dominant", "Straight", "Kinky", "Trans", "Mommy", "Lesbian", "Gay",
+  "Tech", "Business", "Finance", "Health", "Fitness", "Food", "Creative", "Music", "Education", "Law", "Science", "Lifestyle",
 ] as const;
 export type CharacterTag = (typeof CHARACTER_TAGS)[number];
 
@@ -18,6 +19,8 @@ export type Character = {
   age: number;
   gender: string;
   tagline: string;
+  /** The field this character is an expert in, e.g. "personal finance" or "React development". */
+  expertise: string;
   appearance: string;
   traits: string;
   description: string;
@@ -33,7 +36,7 @@ export type Character = {
   params: GenerationParams;
   tags: CharacterTag[];
   style: "realistic" | "anime";
-  /** User id of the creator; empty for built-in "Joi Original" characters. */
+  /** User id of the creator; empty for built-in "PRO Original" characters. */
   ownerId?: string;
   createdAt: string;
 };

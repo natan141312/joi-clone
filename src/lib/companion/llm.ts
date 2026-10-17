@@ -77,3 +77,10 @@ async function* mockStream(messages: LlmMessage[]): AsyncIterable<string> {
     yield word;
   }
 }
+
+/** Full (non-streamed) completion, built on streamChat so every provider works the same way. */
+export async function completeText(messages: LlmMessage[], params: GenerationParams, signal?: AbortSignal): Promise<string> {
+  let out = "";
+  for await (const chunk of await streamChat(messages, params, signal)) out += chunk;
+  return out.trim();
+}

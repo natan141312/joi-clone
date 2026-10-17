@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Joi layout clone (placeholder content)",
-  description: "Local reference rebuild of the joi.com home page layout",
+  title: "PRO — Chat with AI experts",
+  description: "Create an AI expert in any field and chat with them.",
 };
 
 export default async function RootLayout({

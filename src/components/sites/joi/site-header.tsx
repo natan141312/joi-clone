@@ -81,7 +81,7 @@ export function SiteHeader({ user, lang }: { user: PublicUser | null; lang: Lang
             <SidebarIcon />
           </button>
           <Link href="/" aria-label="Home">
-            <img src="/sites/joi/logo.svg" width={54} height={33} alt="" />
+            <img src="/sites/joi/logo.svg" width={64} height={33} alt="" />
           </Link>
         </div>
         <nav className="absolute left-1/2 hidden -translate-x-1/2 gap-2 rounded-full bg-[#0f0f0f] p-1 md:flex">
@@ -145,7 +145,7 @@ export function SiteHeader({ user, lang }: { user: PublicUser | null; lang: Lang
             aria-label="Main menu"
           >
             <div className="mb-4 flex items-center justify-between">
-              <img src="/sites/joi/logo.svg" width={54} height={33} alt="" />
+              <img src="/sites/joi/logo.svg" width={64} height={33} alt="" />
               <button type="button" aria-label="Close menu" onClick={() => setMenu(false)} className="grid h-[38px] w-[38px] place-items-center rounded-full bg-white/10">
                 <X size={20} />
               </button>
@@ -165,7 +165,7 @@ export function SiteHeader({ user, lang }: { user: PublicUser | null; lang: Lang
                 <Link key={l.label} href={l.href} onClick={() => setMenu(false)} className="hover:text-white">{t(lang, l.label)}</Link>
               ))}
             </div>
-            <p className="px-3 pt-4 text-[12px] text-[#757575]">© 2026 JOI AI. All rights reserved.</p>
+            <p className="px-3 pt-4 text-[12px] text-[#757575]">© 2026 PRO AI. All rights reserved.</p>
           </aside>
         </div>
       )}

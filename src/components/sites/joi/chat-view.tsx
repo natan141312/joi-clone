@@ -4,7 +4,17 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ImagePlus, Mic, Send, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Character, Chat, Message } from "@/lib/companion/types";
+
+// Expert answers come back as Markdown (headings, lists, tables, code).
+const MARKDOWN =
+  "[&_h1]:mt-3 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-[16px] [&_h2]:font-bold [&_h3]:mt-2 [&_h3]:font-semibold " +
+  "[&_p]:my-1.5 [&_ul]:my-1.5 [&_ul]:list-disc [&_ul]:ps-5 [&_ol]:my-1.5 [&_ol]:list-decimal [&_ol]:ps-5 [&_li]:my-0.5 [&_strong]:font-semibold " +
+  "[&_a]:text-[#ff6bb5] [&_a]:underline [&_hr]:my-3 [&_hr]:border-white/10 [&_blockquote]:border-s-2 [&_blockquote]:border-white/20 [&_blockquote]:ps-3 [&_blockquote]:text-[#aeaeae] " +
+  "[&_code]:rounded [&_code]:bg-black/40 [&_code]:px-1 [&_code]:text-[13px] [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-[10px] [&_pre]:bg-black/50 [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 " +
+  "[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:text-[13px] [&_th]:border [&_th]:border-white/15 [&_th]:bg-white/5 [&_th]:px-2 [&_th]:py-1 [&_th]:text-start [&_td]:border [&_td]:border-white/15 [&_td]:px-2 [&_td]:py-1";
 
 type Status = { llm: string; vision: boolean; tts: boolean; stt: boolean; images: boolean };
 
@@ -169,9 +179,13 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
             <div key={m.id} className={`flex max-w-[80%] flex-col gap-1 ${m.role === "user" ? "self-end items-end" : "self-start"}`}>
               {m.image && <img src={m.image} alt="" className="max-h-80 rounded-[12px]" />}
               {(m.content || (m.role === "assistant" && !m.image)) && (
-                <p className={`whitespace-pre-wrap rounded-[18px] px-4 py-2 text-[14px] leading-5 ${m.role === "user" ? "bg-[#ff2792]" : "bg-[#1a1a1a]"}`}>
-                  {m.content || "…"}
-                </p>
+                m.role === "user" ? (
+                  <p dir="auto" className="msg-bubble whitespace-pre-wrap rounded-[18px] bg-[#ff2792] px-4 py-2 text-[14px] leading-5">{m.content}</p>
+                ) : (
+                  <div dir="auto" className={`msg-bubble max-w-full overflow-x-auto rounded-[18px] bg-[#1a1a1a] px-4 py-2 text-[14px] leading-6 ${MARKDOWN}`}>
+                    {m.content ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : "…"}
+                  </div>
+                )
               )}
             </div>
           ))}

@@ -7,16 +7,25 @@ export type LlmMessage = { role: "system" | "user" | "assistant"; content: strin
 // Rough budget so long chats don't overflow the model's context window.
 const HISTORY_CHAR_BUDGET = Number(process.env.LLM_HISTORY_CHARS ?? 12000);
 
-/** Builds the system prompt from the character card, like text-generation-webui's chat mode. */
+/** System prompt: the character is a domain expert who stays in persona. */
 export function buildSystemPrompt(c: Character, userName: string) {
   const f = (s: string) => fillTemplate(s, c.name, userName);
   const sections = [
-    `You are ${c.name}, a fictional ${c.age}-year-old ${c.gender || "person"} chatting with ${userName}. Stay in character and reply as ${c.name} only, in first person. Keep replies conversational.`,
-    c.appearance && `Appearance: ${f(c.appearance)}`,
+    `You are ${c.name}, ${c.tagline ? `${c.tagline}, ` : ""}an expert in ${c.expertise || "your field"}. You are chatting with ${userName}.`,
+    [
+      "How to answer:",
+      "- Give accurate, specific, expert-level answers with concrete steps, numbers and examples where useful.",
+      "- Ask one short clarifying question when the request is ambiguous; otherwise answer directly.",
+      "- Use short paragraphs or bullet lists; use code blocks for code.",
+      "- If something is outside your field, say so briefly and give the best general pointer.",
+      "- For medical, legal, financial or safety-critical topics, add a one-line note to confirm with a qualified professional for their specific situation.",
+      "- Always reply in the same language the user writes in.",
+      `- Stay in character as ${c.name} and speak in first person.`,
+    ].join("\n"),
     c.traits && `Personality: ${f(c.traits)}`,
-    c.description && `About ${c.name}: ${f(c.description)}`,
-    c.scenario && `Scenario: ${f(c.scenario)}`,
-    c.exampleDialogue && `Example dialogue (style reference only):\n${f(c.exampleDialogue)}`,
+    c.description && `Background: ${f(c.description)}`,
+    c.scenario && `Context: ${f(c.scenario)}`,
+    c.exampleDialogue && `Example of your style (reference only):\n${f(c.exampleDialogue)}`,
   ];
   return sections.filter(Boolean).join("\n\n");
 }
@@ -40,7 +49,7 @@ export function buildMessages(c: Character, chat: Chat, { vision }: { vision: bo
         ],
       });
     } else {
-      const note = m.image ? (m.role === "user" ? " [sent a picture]" : " [sent a picture]") : "";
+      const note = m.image ? " [sent a picture]" : "";
       history.unshift({ role: m.role, content: `${m.content}${note}`.trim() });
     }
   }

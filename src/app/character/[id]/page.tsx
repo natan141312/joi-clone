@@ -34,7 +34,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             <p className="text-[13px] text-[#aeaeae]">{character.tagline}</p>
             <h1 className="text-[32px] font-bold leading-tight">{character.name}, {character.age}</h1>
             <p className="mt-1 text-[13px] text-[#858585]">
-              {character.ownerId ? (isOwner ? "Created by you" : "Community character") : "Joi Original"} · {s.chats} chats · {s.messages} messages
+              {character.ownerId ? (isOwner ? "Created by you" : "Community character") : "PRO Original"} · {s.chats} chats · {s.messages} messages
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {[character.style === "anime" ? "Anime style" : "Realistic", ...character.tags].map((tag) => (
@@ -49,7 +49,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             </section>
           ))}
           <div className="flex flex-wrap gap-2 pt-2">
-            <a href={`/chat/start/${character.id}`} className="rounded-full bg-[#ff2792] px-6 py-2.5 text-[14px] font-semibold">Start chat</a>
+            <a href={`/chat/start/${character.id}`} className="rounded-full bg-[#ff2792] px-6 py-2.5 text-[14px] font-semibold">Ask {character.name}</a>
             {isOwner && <Link href={`/character/${character.id}/edit`} className="rounded-full bg-white/10 px-6 py-2.5 text-[14px] font-medium">Edit</Link>}
             {isOwner && <CharacterActions id={character.id} />}
           </div>

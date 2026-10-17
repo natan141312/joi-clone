@@ -8,13 +8,12 @@ export const NAV_HREF: Record<(typeof NAV)[number], string> = {
 };
 
 export const FILTER_TAGS = [
-  "All", "Anime", "LGBT+", "Fantasy", "Dominant", "Straight",
-  "Kinky", "Trans", "Mommy", "Lesbian", "Gay",
+  "All", "Tech", "Business", "Finance", "Health", "Fitness", "Food", "Creative", "Music", "Education", "Law", "Science", "Lifestyle",
 ] as const;
 
 export const CREATOR_FILTERS = [
   { value: "any", label: "Any creator" },
-  { value: "original", label: "Joi Original" },
+  { value: "original", label: "PRO Original" },
   { value: "community", label: "Community" },
   { value: "mine", label: "My characters" },
 ] as const;
@@ -27,14 +26,14 @@ export const AGE_FILTERS = [
 ] as const;
 
 export const GENDER_FILTERS = [
+  { value: "any", label: "Any gender" },
   { value: "female", label: "Female" },
   { value: "male", label: "Male" },
   { value: "non-binary", label: "Non-binary" },
-  { value: "any", label: "Any gender" },
 ] as const;
 
 export type HomeFilters = { q: string; creator: string; age: string; gender: string; tag: string };
-export const DEFAULT_FILTERS: HomeFilters = { q: "", creator: "any", age: "any", gender: "female", tag: "All" };
+export const DEFAULT_FILTERS: HomeFilters = { q: "", creator: "any", age: "any", gender: "any", tag: "All" };
 
 export type HomeCard = {
   id: string;
@@ -56,17 +55,17 @@ export const SIDE_MENU: { title: string; items: { label: string; href: string }[
   {
     title: "Explore",
     items: [
-      { label: "Women", href: "/?gender=female" },
-      { label: "Men", href: "/?gender=male" },
-      { label: "Anime", href: "/?tag=Anime&gender=any" },
-      { label: "All categories", href: "/?gender=any" },
+      { label: "Tech", href: "/?tag=Tech" },
+      { label: "Health & Fitness", href: "/?tag=Fitness" },
+      { label: "Finance", href: "/?tag=Finance" },
+      { label: "All experts", href: "/" },
     ],
   },
   { title: "", items: [{ label: "Chats", href: "/chats" }] },
   {
     title: "AI Tools",
     items: [
-      { label: "Create characters", href: "/generate/character" },
+      { label: "Create an expert", href: "/generate/character" },
       { label: "Generate images", href: "/gallery" },
       { label: "Generate videos", href: "/info/generate-videos" },
     ],
@@ -74,7 +73,7 @@ export const SIDE_MENU: { title: string; items: { label: string; href: string }[
   {
     title: "Earn with us",
     items: [
-      { label: "Meet the Joi Babes", href: "/info/creators" },
+      { label: "Become an expert creator", href: "/info/creators" },
       { label: "Become an affiliate", href: "/info/affiliate" },
       { label: "Creator Partnership", href: "/info/creator-partnership" },
     ],
@@ -83,7 +82,7 @@ export const SIDE_MENU: { title: string; items: { label: string; href: string }[
     title: "About us",
     items: [
       { label: "Advisory board", href: "/info/advisory-board" },
-      { label: "Safety at Joi", href: "/info/safety" },
+      { label: "Safety at PRO", href: "/info/safety" },
       { label: "Support", href: "/info/support" },
     ],
   },
@@ -98,26 +97,26 @@ export const LEGAL = [
   { label: "Refund policy", href: "/info/refunds" },
 ];
 
-// Original copy describing this app (not taken from the source site).
+// Copy for the PRO expert-chat concept.
 export const INTRO = {
-  title: "Your characters, your stories",
-  text: "Chat with AI characters, or create your own from scratch: give them a personality, a backstory, a scenario and a voice. Every conversation is saved to your account, so you can pick up where you left off.",
+  title: "An expert in any field, one message away",
+  text: "Pick an AI expert or create your own: type a field like tax law, React, marathon training or Italian cooking, and the AI builds a complete expert with a name, background, teaching style and portrait. Then ask anything, in any language.",
 };
 
 export const FAQ = [
-  { q: "1. How does chatting with a character work?", a: "Pick a character and say hi. Each character has a written persona (personality, background, scenario and example dialogue) that the AI model follows, and the conversation history is sent along so replies stay consistent." },
-  { q: "2. Can I create my own character?", a: "Yes. Open Create AI, fill in the name, age (18+), appearance, personality, scenario and greeting, and start chatting right away. You can edit or delete your characters later from their profile." },
-  { q: "3. Can I talk with my voice?", a: "Yes, when voice is enabled: press the microphone in a chat, speak, and your message is transcribed and sent. Replies can be read aloud with the character's voice." },
-  { q: "4. Can I send and receive pictures?", a: "You can attach a picture to a message; models with vision support can describe it. When image generation is enabled, ask the character for a picture with the sparkle button." },
-  { q: "5. Are my chats private?", a: "Chats are tied to your account (or to this browser if you are not signed in) and are only visible to you." },
-  { q: "6. What are the filters for?", a: "Use search, creator, age, gender and category filters to narrow the character list. The side menu shortcuts (Women, Men, Anime) apply the same filters." },
-  { q: "7. Do characters remember me?", a: "Within a chat, yes: recent messages are included each time. Starting a new chat with the same character begins a fresh conversation." },
-  { q: "8. Can I change how creative the replies are?", a: "Each character has generation settings (creativity, top P and reply length) that you can adjust when you create it." },
+  { q: "1. How do I create an expert?", a: "Open Create AI, type the field of expertise and press Generate with AI. The AI writes the full profile (name, title, background, personality, greeting and portrait prompt). Review it, edit anything, and start chatting." },
+  { q: "2. What can I ask an expert?", a: "Anything in their field: explanations, step-by-step plans, reviews of your code or writing, recipes, training programs, budgets and more. Each expert answers with concrete, practical detail." },
+  { q: "3. Which language do experts speak?", a: "Yours. Experts reply in the language you write in, including Hebrew." },
+  { q: "4. Can I trust the answers?", a: "Experts are AI and can make mistakes. For medical, legal or financial decisions, use the advice as a starting point and confirm with a qualified professional." },
+  { q: "5. Can I send pictures?", a: "Yes. Attach a picture to your message (for example a chart, a dish or an error screen). The expert can also send pictures with the sparkle button." },
+  { q: "6. Are my chats private?", a: "Chats are tied to your account (or to this browser if you are not signed in) and are only visible to you." },
+  { q: "7. Can I edit or delete my experts?", a: "Yes. Open the expert's profile from the card's person icon; creators see Edit and Delete." },
+  { q: "8. Can I change how detailed the answers are?", a: "Each expert has answer settings (creativity and reply length) under Advanced when you create or edit it." },
 ];
 
 export const DISCOVER = [
-  { label: "NSFW Chat", href: "/chats" },
+  { label: "Expert Chat", href: "/chats" },
   { label: "Generation Image", href: "/gallery" },
-  { label: "Generation Character", href: "/generate/character" },
-  { label: "18 U.S.C. 2257", href: "/info/2257" },
+  { label: "Create an Expert", href: "/generate/character" },
+  { label: "Safety", href: "/info/safety" },
 ];

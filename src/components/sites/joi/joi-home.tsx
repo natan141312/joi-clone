@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Search, User, X } from "lucide-react";
 import type { PublicUser } from "@/lib/companion/types";
-import { AgeGate } from "./age-gate";
 import { AGE_FILTERS, CREATOR_FILTERS, DEFAULT_FILTERS, DISCOVER, FAQ, FILTER_TAGS, GENDER_FILTERS, INTRO, type HomeCard, type HomeFilters } from "./data";
 import { t, type Lang } from "./i18n";
 import { SiteHeader } from "./site-header";
@@ -273,7 +272,7 @@ export function JoiHome({
               <p className="absolute inset-x-0 bottom-[21px] text-center text-[24px] font-semibold leading-[30px]">
                 {t(lang, "Create your own")}
                 <br />
-                {t(lang, "AI Girlfriend")}
+                {t(lang, "AI Expert")}
               </p>
             </div>
             <div className="grid h-[72px] place-items-center">
@@ -307,7 +306,7 @@ export function JoiHome({
                 <p className="line-clamp-2 text-[10px] font-medium leading-4 text-[#858585]">{c.blurb}</p>
               </div>
               <p className="pointer-events-none h-7 px-3 text-[12px] font-medium leading-4 text-[#858585]">
-                {c.creator === "original" ? t(lang, "Joi Original") : c.creator === "mine" ? <span className="text-white">{t(lang, "Yours")}</span> : t(lang, "Community")}
+                {c.creator === "original" ? t(lang, "PRO Original") : c.creator === "mine" ? <span className="text-white">{t(lang, "Yours")}</span> : t(lang, "Community")}
               </p>
             </article>
           ))}
@@ -352,7 +351,6 @@ export function JoiHome({
         </section>
       </main>
 
-      <AgeGate />
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default async function ChatPage({
     const character = characterId ? await getCharacter(characterId) : null;
     if (!character || !/^[a-zA-Z0-9-]{1,80}$/.test(id) || (await getChat(id))) notFound();
     const [user, viewer] = await Promise.all([getCurrentUser(), getViewerId()]);
-    owned = { chat: newChatDraft(character, user?.name ?? "You", viewer ?? "", id), character };
+    owned = { chat: newChatDraft(character, user?.name ?? "friend", viewer ?? "", id), character };
   }
   return <ChatView initialChat={owned.chat} character={{ ...owned.character, avatar: avatarFor(owned.character) }} />;
 }

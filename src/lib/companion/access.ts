@@ -25,6 +25,6 @@ export async function getOrRestoreChat(id: string, body: { characterId?: unknown
   if (!character) return null;
   const ownerId = await ensureViewerId();
   const user = await getCurrentUser();
-  const chat = await restoreChat(id, character, user?.name ?? "You", ownerId, body.history);
+  const chat = await restoreChat(id, character, user?.name ?? "friend", ownerId, body.history);
   return chat ? { chat, character } : null;
 }

@@ -24,7 +24,7 @@ export interface Kv {
 
 function upstash(url: string, token: string): Kv {
   const base = url.replace(/\/$/, "");
-  const prefix = process.env.KV_PREFIX ?? "joi";
+  const prefix = process.env.KV_PREFIX ?? "pro";
   const key = (col: Collection, id: string) => `${prefix}:${col}:${id}`;
   const index = (col: Collection) => `${prefix}:idx:${col}`;
 
