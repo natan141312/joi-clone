@@ -1,4 +1,6 @@
+import { HUB_ACTIONS_PROMPT } from "./hub";
 import { fillTemplate } from "./store";
+import { APPS_PROMPT } from "./widgets";
 import type { Character, Chat } from "./types";
 
 export type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
@@ -8,7 +10,7 @@ export type LlmMessage = { role: "system" | "user" | "assistant"; content: strin
 const HISTORY_CHAR_BUDGET = Number(process.env.LLM_HISTORY_CHARS ?? 12000);
 
 /** System prompt: the character is a domain expert who stays in persona. */
-export function buildSystemPrompt(c: Character, userName: string) {
+export function buildSystemPrompt(c: Character, userName: string, userContext = "") {
   const f = (s: string) => fillTemplate(s, c.name, userName);
   const sections = [
     `You are ${c.name}, ${c.tagline ? `${c.tagline}, ` : ""}an expert in ${c.expertise || "your field"}. You are chatting with ${userName}.`,
@@ -27,11 +29,14 @@ export function buildSystemPrompt(c: Character, userName: string) {
     c.description && `Background: ${f(c.description)}`,
     c.scenario && `Context: ${f(c.scenario)}`,
     c.exampleDialogue && `Example of your style (reference only):\n${f(c.exampleDialogue)}`,
+    userContext && `What you know about ${userName} from their life hub (use it to personalize, don't repeat it back):\n${userContext}`,
+    HUB_ACTIONS_PROMPT,
+    APPS_PROMPT,
   ];
   return sections.filter(Boolean).join("\n\n");
 }
 
-export function buildMessages(c: Character, chat: Chat, { vision }: { vision: boolean }): LlmMessage[] {
+export function buildMessages(c: Character, chat: Chat, { vision, userContext = "" }: { vision: boolean; userContext?: string }): LlmMessage[] {
   const history: LlmMessage[] = [];
   let used = 0;
   // Walk backwards so the newest messages are always kept.
@@ -54,5 +59,5 @@ export function buildMessages(c: Character, chat: Chat, { vision }: { vision: bo
       history.unshift({ role: m.role, content: `${m.content}${note}`.trim() });
     }
   }
-  return [{ role: "system", content: buildSystemPrompt(c, chat.userName) }, ...history];
+  return [{ role: "system", content: buildSystemPrompt(c, chat.userName, userContext) }, ...history];
 }

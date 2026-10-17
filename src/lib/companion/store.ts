@@ -255,7 +255,7 @@ const SEED_BY_ID = new Map(SEED.map((c) => [c.name.toLowerCase(), c]));
 function normalize(c: Character): Character {
   // Older records may predate tags/style/avatars.
   const seed = !c.ownerId ? SEED_BY_ID.get(c.id) : undefined;
-  const merged = seed ? { ...c, ...seed, profileMd: EXPERT_PROFILES[c.id] ?? c.profileMd } : c;
+  const merged = seed ? { ...c, ...seed, params: DEFAULT_PARAMS, profileMd: EXPERT_PROFILES[c.id] ?? c.profileMd } : c;
   return { ...merged, tags: merged.tags ?? [], style: merged.style ?? "realistic", expertise: merged.expertise ?? merged.tagline ?? "" };
 }
 

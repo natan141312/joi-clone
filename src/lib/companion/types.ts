@@ -77,4 +77,23 @@ export type Chat = {
   updatedAt: string;
 };
 
-export const DEFAULT_PARAMS: GenerationParams = { temperature: 0.8, topP: 0.9, maxTokens: 400 };
+export const DEFAULT_PARAMS: GenerationParams = { temperature: 0.8, topP: 0.9, maxTokens: 1200 };
+
+export type GroupMessage = {
+  id: string;
+  role: "user" | "assistant";
+  /** Expert who wrote it (assistant messages). */
+  characterId?: string;
+  content: string;
+  createdAt: string;
+};
+
+export type Group = {
+  id: string;
+  ownerId: string;
+  name: string;
+  memberIds: string[];
+  messages: GroupMessage[];
+  createdAt: string;
+  updatedAt: string;
+};

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
 import { LANG_COOKIE, parseLang } from "@/components/sites/joi/i18n";
+import { LangProvider } from "@/components/sites/joi/lang-context";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -40,7 +41,9 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0f0f0f]">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0f0f0f]">
+        <LangProvider lang={lang}>{children}</LangProvider>
+      </body>
     </html>
   );
 }

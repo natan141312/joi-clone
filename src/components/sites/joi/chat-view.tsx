@@ -3,13 +3,48 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ImagePlus, Mic, Send, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
+import { Brain, ChevronLeft, Download, LayoutGrid, ImagePlus, ListChecks, Mic, Send, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { parseHubActions, stripHubActions, type HubAction } from "@/lib/companion/hub";
 import type { Character, Chat, Message } from "@/lib/companion/types";
+import { splitReply } from "@/lib/companion/widgets";
+import { AppWidget } from "./app-widget";
+import { useT } from "./lang-context";
 
 import { saveLocalChat } from "./local-chats";
 import { MARKDOWN } from "./markdown";
+import { applyActionsToHub, readHub } from "./use-hub";
+
+/** Assistant message: Markdown text with expert apps (widgets) rendered inline; action tags hidden. */
+function AssistantContent({ content, by }: { content: string; by: string }) {
+  const parts = splitReply(stripHubActions(content));
+  if (!parts.length) return <>…</>;
+  return (
+    <div className="flex flex-col gap-2">
+      {parts.map((p, i) =>
+        p.kind === "text" ? (
+          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>{p.text}</ReactMarkdown>
+        ) : (
+          <AppWidget key={i} widget={p.widget} by={by} compact />
+        ),
+      )}
+    </div>
+  );
+}
+
+function downloadChat(name: string, messages: Message[]) {
+  const md = messages
+    .filter((m) => m.content)
+    .map((m) => `**${m.role === "user" ? "You" : name}:**\n\n${stripHubActions(m.content)}`)
+    .join("\n\n---\n\n");
+  const url = URL.createObjectURL(new Blob([`# Chat with ${name}\n\n${md}\n`], { type: "text/markdown" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chat-${name.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 type Status = { llm: string; vision: boolean; tts: boolean; stt: boolean; images: boolean };
 
@@ -22,6 +57,8 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
   const [status, setStatus] = useState<Status>();
   const [autoVoice, setAutoVoice] = useState(true);
   const [recording, setRecording] = useState(false);
+  const [actions, setActions] = useState<Record<string, HubAction[]>>({});
+  const { tr } = useT();
   const recorder = useRef<MediaRecorder | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
@@ -93,7 +130,7 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
       const res = await fetch(`/api/chats/${initialChat.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, image: img, characterId: character.id, history: history() }),
+        body: JSON.stringify({ text: content, image: img, characterId: character.id, history: history(), hub: readHub() }),
       });
       if (!res.ok || !res.body) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? `Error ${res.status}`);
       const reader = res.body.getReader();
@@ -105,7 +142,13 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
         reply += decoder.decode(value, { stream: true });
         setMessages((m) => m.map((x) => (x.id === replyId ? { ...x, content: reply } : x)));
       }
-      speak(reply);
+      // Experts can act on the hub: [[task: ...]] and [[memory: ...]] tags in the reply.
+      const acts = parseHubActions(reply);
+      if (acts.length) {
+        applyActionsToHub(acts, character.id);
+        setActions((a) => ({ ...a, [replyId]: acts }));
+      }
+      speak(stripHubActions(reply).replace(/```app[\s\S]*?```/g, ""));
     } catch (e) {
       setError((e as Error).message);
       setMessages((m) => m.filter((x) => x.id !== replyId));
@@ -173,6 +216,13 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
           <p className="truncate text-[16px] font-medium">{character.name}, {character.age}</p>
           <p className="truncate text-[11px] text-[#858585]">{character.tagline} · <span className="text-[#ff6bb5]">{modelLabel}</span></p>
         </div>
+        <Link href={`/character/${character.id}#app`} className="hidden h-[38px] items-center gap-1.5 rounded-full bg-white/10 px-3 text-[13px] font-medium hover:bg-white/20 sm:flex">
+          <LayoutGrid size={16} />
+          {tr("App")}
+        </Link>
+        <button type="button" aria-label={tr("Export chat")} title={tr("Export chat")} onClick={() => downloadChat(character.name, messages)} className="grid h-[38px] w-[38px] place-items-center rounded-full bg-white/10 hover:bg-white/20">
+          <Download size={17} />
+        </button>
         {status?.tts && (
           <button type="button" aria-label={autoVoice ? "Mute voice" : "Play voice"} onClick={() => setAutoVoice((v) => !v)} className="grid h-[38px] w-[38px] place-items-center rounded-full bg-white/10">
             {autoVoice ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -190,7 +240,13 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
                   <p dir="auto" className="msg-bubble whitespace-pre-wrap rounded-[18px] bg-[#ff2792] px-4 py-2 text-[14px] leading-5">{m.content}</p>
                 ) : (
                   <div dir="auto" className={`msg-bubble max-w-full overflow-x-auto rounded-[18px] bg-[#1a1a1a] px-4 py-2 text-[14px] leading-6 ${MARKDOWN}`}>
-                    {m.content ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : "…"}
+                    {m.content ? <AssistantContent content={m.content} by={character.id} /> : "…"}
+                    {actions[m.id]?.map((a, i) => (
+                      <p key={i} className="mt-2 flex items-center gap-1.5 rounded-[10px] bg-[#ff2792]/10 px-2 py-1 text-[12px] text-[#ff9ccc]">
+                        {a.type === "task" ? <ListChecks size={13} /> : <Brain size={13} />}
+                        {a.type === "task" ? `${tr("Added task to your hub")}: ${a.title}` : `${tr("Saved to your memory")}: ${a.text}`}
+                      </p>
+                    ))}
                   </div>
                 )
               )}
@@ -220,7 +276,7 @@ export function ChatView({ initialChat, character, modelLabel }: { initialChat: 
               <button type="button" onClick={() => setImage(undefined)} className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-black text-[11px]">✕</button>
             </div>
           )}
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={`Message ${character.name}`} className="bg-transparent text-[14px] outline-none" aria-label="Message" />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={`${tr("Message")} ${character.name}`} className="bg-transparent text-[14px] outline-none" aria-label="Message" />
         </div>
         {status?.images && (
           <button type="button" disabled={busy} onClick={askPicture} aria-label="Ask for a picture" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 disabled:opacity-40">

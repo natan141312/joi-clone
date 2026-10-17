@@ -1,6 +1,7 @@
 import { llmConfig, streamChat } from "@/lib/companion/llm";
 import { buildMessages } from "@/lib/companion/prompt";
 import { getOrRestoreChat } from "@/lib/companion/access";
+import { hubContext, sanitizeHub } from "@/lib/companion/hub";
 import { appendMessages } from "@/lib/companion/store";
 
 const MAX_TEXT = 4000;
@@ -9,7 +10,7 @@ const MAX_IMAGE = 4_000_000;
 // POST { text, image? } -> streams the character's reply as text/plain, then saves both messages.
 export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/messages">) {
   const { id } = await ctx.params;
-  const body = (await req.json().catch(() => ({}))) as { text?: string; image?: string; characterId?: string; history?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { text?: string; image?: string; characterId?: string; history?: unknown; hub?: unknown };
   const text = (body.text ?? "").trim().slice(0, MAX_TEXT);
   const image = typeof body.image === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(body.image) && body.image.length <= MAX_IMAGE ? body.image : undefined;
   if (!text && !image) return Response.json({ error: "Message is empty" }, { status: 400 });
@@ -22,7 +23,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/mess
 
   let chunks: AsyncIterable<string>;
   try {
-    chunks = await streamChat(buildMessages(character, chat, { vision: llmConfig.vision }), character.params, req.signal, character.model);
+    chunks = await streamChat(buildMessages(character, chat, { vision: llmConfig.vision, userContext: body.hub ? hubContext(sanitizeHub(body.hub)) : "" }), character.params, req.signal, character.model);
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }

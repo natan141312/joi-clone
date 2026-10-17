@@ -1,8 +1,9 @@
-export const NAV = ["Explore", "Gallery", "Create AI", "Chats"] as const;
+export const NAV = ["Hub", "Explore", "Groups", "Create AI", "Chats"] as const;
 
 export const NAV_HREF: Record<(typeof NAV)[number], string> = {
+  Hub: "/hub",
   Explore: "/",
-  Gallery: "/gallery",
+  Groups: "/groups",
   "Create AI": "/generate/character",
   Chats: "/chats",
 };
@@ -91,7 +92,14 @@ export const SIDE_MENU: { title: string; items: { label: string; href: string }[
       { label: "All experts", href: "/" },
     ],
   },
-  { title: "", items: [{ label: "Chats", href: "/chats" }] },
+  {
+    title: "",
+    items: [
+      { label: "Life Hub", href: "/hub" },
+      { label: "Expert groups", href: "/groups" },
+      { label: "Chats", href: "/chats" },
+    ],
+  },
   {
     title: "AI Tools",
     items: [

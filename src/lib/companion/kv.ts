@@ -10,7 +10,7 @@ import path from "node:path";
 // - JSON files otherwise (local dev). On Vercel without Redis this falls back to /tmp, which is
 //   temporary and not shared between server instances.
 
-export type Collection = "characters" | "chats" | "users" | "sessions" | "ratings";
+export type Collection = "characters" | "chats" | "users" | "sessions" | "ratings" | "hubs" | "groups";
 
 export interface Kv {
   get<T>(col: Collection, id: string): Promise<T | null>;

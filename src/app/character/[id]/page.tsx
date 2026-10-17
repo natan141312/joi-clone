@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CharacterActions } from "@/components/sites/joi/character-actions";
+import { ExpertApps } from "@/components/sites/joi/expert-apps";
 import { ExpertProfile } from "@/components/sites/joi/expert-profile";
 import { RateExpert } from "@/components/sites/joi/rate-expert";
 import { PageShell } from "@/components/sites/joi/page-shell";
@@ -57,6 +58,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
               <p className="whitespace-pre-wrap text-[14px] leading-5 text-[#aeaeae]">{v.replaceAll("{{char}}", character.name).replaceAll("{{user}}", "you")}</p>
             </section>
           ))}
+          <ExpertApps expertId={character.id} expertName={character.name} />
           {character.profileMd && (
             <section className="flex flex-col gap-2">
               <h2 className="text-[14px] font-semibold">Expert profile</h2>
