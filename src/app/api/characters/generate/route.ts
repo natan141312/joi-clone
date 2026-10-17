@@ -15,7 +15,30 @@ type Draft = {
   greeting: string;
   imagePrompt: string;
   tags: CharacterTag[];
+  profileMd: string;
 };
+
+function fallbackMd(name: string, title: string, expertise: string) {
+  return [
+    `# ${name} — ${title}`,
+    "",
+    "## Who I am",
+    `An experienced specialist in ${expertise}, focused on practical, step-by-step help.`,
+    "",
+    "## Areas of expertise",
+    `- Core concepts of ${expertise}`,
+    "- Common problems and how to solve them",
+    "- Planning, best practices and next steps",
+    "",
+    "## How I work with you",
+    "1. Ask about your goal, situation and level.",
+    "2. Explain the key idea simply, then go deeper.",
+    "3. Give concrete steps, examples and a clear next action.",
+    "",
+    "## Boundaries",
+    "General guidance only; for high-stakes decisions, confirm with a qualified professional.",
+  ].join("\n");
+}
 
 const FIELDS = ["name", "tagline", "appearance", "traits", "description", "scenario", "exampleDialogue", "greeting", "imagePrompt"] as const;
 
@@ -36,6 +59,7 @@ function fallbackDraft(expertise: string, gender: string, style: string): Draft 
     greeting: `Hi, I'm ${name}, your ${expertise} expert. What would you like help with?`,
     imagePrompt: `${style === "anime" ? "anime illustration" : "professional portrait photo"} of a ${gender === "male" ? "man" : gender === "non-binary" ? "person" : "woman"} expert in ${expertise}, friendly smile, studio light`,
     tags: [],
+    profileMd: fallbackMd(name, `${title} Expert`, expertise),
   };
 }
 
@@ -87,6 +111,33 @@ export async function POST(req: Request) {
   for (const k of FIELDS) {
     const v = raw[k];
     if (typeof v === "string" && v.trim()) draft[k] = v.trim().slice(0, k === "description" || k === "exampleDialogue" ? 4000 : 1000);
+  }
+  draft.profileMd = fallbackMd(draft.name, draft.tagline, expertise);
+  // Second pass: the AI writes the expert's knowledge sheet (Markdown) that the chat follows.
+  try {
+    const mdPrompt = [
+      `Write the expert profile for ${draft.name}, ${draft.tagline}, a top expert in "${expertise}".`,
+      `Background: ${draft.description}`,
+      "Write it in Markdown, in the same language as the field of expertise above (English if unclear), with exactly these sections:",
+      `# ${draft.name} — ${draft.tagline}`,
+      "## Who I am (2 sentences)",
+      "## Areas of expertise (5-7 bullets)",
+      "## How I work with you (3-4 numbered steps)",
+      "## Core knowledge (5-7 bullets with real, accurate facts, rules of thumb, numbers or frameworks from this field)",
+      "## Typical questions (3 example questions)",
+      "## Boundaries (1-2 sentences; when to see a licensed professional if relevant)",
+      "Be accurate and specific. Output only the Markdown.",
+    ].join("\n");
+    const md = await completeText([{ role: "user", content: mdPrompt }], { temperature: 0.6, topP: 0.9, maxTokens: 1400 }, req.signal);
+    const clean = md
+      .replace(/^```(?:markdown|md)?\s*/i, "")
+      .replace(/```\s*$/, "")
+      // Drop instruction hints the model sometimes copies into headings, e.g. "## Who I am (2 sentences)".
+      .replace(/^(#{1,3} .*?)\s*\([^)]*\)\s*$/gm, "$1")
+      .trim();
+    if (clean.includes("##") && clean.length > 200) draft.profileMd = clean.slice(0, 12000);
+  } catch {
+    // keep the template
   }
   const age = Number(raw.age);
   if (Number.isInteger(age) && age >= 21 && age <= 80) draft.age = age;

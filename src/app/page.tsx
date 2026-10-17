@@ -9,11 +9,15 @@ export const dynamic = "force-dynamic";
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [sp, { user, viewerId, lang }, characters, stats] = await Promise.all([searchParams, getPageContext(), listCharacters(), characterStats()]);
   const pick = (k: keyof HomeFilters) => (typeof sp[k] === "string" ? (sp[k] as string) : DEFAULT_FILTERS[k]);
-  const initialFilters: HomeFilters = { q: pick("q"), creator: pick("creator"), age: pick("age"), gender: pick("gender"), tag: pick("tag") };
+  const initialFilters: HomeFilters = { q: pick("q"), creator: pick("creator"), age: pick("age"), gender: pick("gender"), tag: pick("tag"), sort: pick("sort") };
 
   const cards: HomeCard[] = characters.map((c) => ({
     id: c.id,
     tagline: c.tagline,
+    expertise: c.expertise,
+    rating: stats[c.id]?.rating ?? 0,
+    ratings: stats[c.id]?.ratings ?? 0,
+    createdAt: c.createdAt,
     name: c.name,
     age: c.age,
     gender: c.gender,

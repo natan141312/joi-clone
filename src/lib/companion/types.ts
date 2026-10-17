@@ -21,6 +21,8 @@ export type Character = {
   tagline: string;
   /** The field this character is an expert in, e.g. "personal finance" or "React development". */
   expertise: string;
+  /** Markdown knowledge sheet the model follows (built-in experts: content/experts/<id>.md). */
+  profileMd?: string;
   appearance: string;
   traits: string;
   description: string;

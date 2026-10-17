@@ -5,6 +5,7 @@ const LIMITS: Record<string, number> = {
   gender: 40,
   tagline: 80,
   expertise: 120,
+  profileMd: 12000,
   appearance: 2000,
   traits: 2000,
   description: 4000,

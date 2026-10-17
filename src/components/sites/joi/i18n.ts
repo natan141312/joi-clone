@@ -63,6 +63,17 @@ const HE: Record<string, string> = {
   "Frequently Asked Questions": "שאלות נפוצות",
   "Discover more": "גלה עוד",
   Yours: "שלך",
+  Categories: "קטגוריות",
+  "Featured expert": "מומחה מומלץ",
+  "Expert in": "מומחה ב",
+  experts: "מומחים",
+  chats: "צ'אטים",
+  New: "חדש",
+  Trending: "חם עכשיו",
+  "Most chats": "הכי פעילים",
+  "Top rated": "מדורגים גבוה",
+  Newest: "חדשים",
+  "Type any field, AI builds the expert": "כתבו תחום, ה-AI בונה את המומחה",
 };
 
 export function t(lang: Lang, s: string) {

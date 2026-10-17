@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   }
   const anon = (await cookies()).get(ANON_COOKIE)?.value;
   if (anon) await claimAnonymousData(anon, user.id);
-  await startSession(user.id);
+  await startSession(toPublic(user));
   return Response.json(toPublic(user));
 }

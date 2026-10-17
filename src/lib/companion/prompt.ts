@@ -22,6 +22,7 @@ export function buildSystemPrompt(c: Character, userName: string) {
       "- Always reply in the same language the user writes in.",
       `- Stay in character as ${c.name} and speak in first person.`,
     ].join("\n"),
+    c.profileMd && `Your expert profile and knowledge base (follow it closely):\n${f(c.profileMd)}`,
     c.traits && `Personality: ${f(c.traits)}`,
     c.description && `Background: ${f(c.description)}`,
     c.scenario && `Context: ${f(c.scenario)}`,

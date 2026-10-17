@@ -32,12 +32,39 @@ export const GENDER_FILTERS = [
   { value: "non-binary", label: "Non-binary" },
 ] as const;
 
-export type HomeFilters = { q: string; creator: string; age: string; gender: string; tag: string };
-export const DEFAULT_FILTERS: HomeFilters = { q: "", creator: "any", age: "any", gender: "any", tag: "All" };
+export type HomeFilters = { q: string; creator: string; age: string; gender: string; tag: string; sort: string };
+export const DEFAULT_FILTERS: HomeFilters = { q: "", creator: "any", age: "any", gender: "any", tag: "All", sort: "trending" };
+
+export const SORTS = [
+  { value: "trending", label: "Trending" },
+  { value: "chats", label: "Most chats" },
+  { value: "rating", label: "Top rated" },
+  { value: "new", label: "Newest" },
+] as const;
+
+/** Short description of each category, shown in the sidebar. */
+export const CATEGORY_INFO: Record<string, string> = {
+  Tech: "Code, AI, security",
+  Business: "Startups, strategy, marketing",
+  Finance: "Money, investing, real estate",
+  Health: "Body, mind, wellbeing",
+  Fitness: "Training and nutrition",
+  Food: "Cooking and recipes",
+  Creative: "Writing, design, art",
+  Music: "Production and songwriting",
+  Education: "Languages and learning",
+  Law: "Contracts and your rights",
+  Science: "Physics, data, research",
+  Lifestyle: "Travel, habits, life",
+};
 
 export type HomeCard = {
   id: string;
   tagline: string;
+  expertise: string;
+  rating: number;
+  ratings: number;
+  createdAt: string;
   name: string;
   age: number;
   gender: string;

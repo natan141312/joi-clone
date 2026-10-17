@@ -9,6 +9,7 @@ const FIELDS: { key: string; label: string; hint?: string; rows?: number; advanc
   { key: "tagline", label: "Title", hint: "Job title shown on the card, e.g. Tax Lawyer" },
   { key: "description", label: "Background & credentials", rows: 3 },
   { key: "traits", label: "Personality & teaching style", rows: 2 },
+  { key: "profileMd", label: "Expert profile (Markdown) — the knowledge sheet the expert follows", rows: 12 },
   { key: "greeting", label: "Greeting", hint: "First message in every new chat", rows: 2 },
   { key: "appearance", label: "Appearance", rows: 2, advanced: true },
   { key: "scenario", label: "Context", hint: "Optional. Use {{char}} and {{user}} as placeholders.", rows: 2, advanced: true },
@@ -22,6 +23,7 @@ const EXAMPLES = ["Tax law", "React & Next.js", "Marathon training", "Real estat
 const input = "w-full rounded-[12px] border border-[#303030] bg-white/5 px-3 py-2 text-[14px] text-white outline-none focus:border-white/40";
 
 const TEXT_KEYS = ["name", "gender", "expertise", ...FIELDS.map((f) => f.key)] as const;
+
 
 type Draft = Record<string, unknown> & { tags?: CharacterTag[]; age?: number };
 
@@ -83,7 +85,7 @@ export function CharacterForm({ initial }: { initial?: Character }) {
       return next;
     });
     if (draft.tags?.length) setTags(draft.tags);
-    setGenInfo(generated ? "Generated with AI. Review and edit anything, then create." : "The AI was busy, so a basic template was filled in. Edit it or generate again.");
+    setGenInfo(generated ? "Generated with AI, including the expert profile (Markdown). Review and edit anything, then create." : "The AI was busy, so a basic template was filled in. Edit it or generate again.");
     setShowForm(true);
   };
 

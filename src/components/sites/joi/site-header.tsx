@@ -97,7 +97,7 @@ export function SiteHeader({ user, lang }: { user: PublicUser | null; lang: Lang
         </nav>
         <div ref={moreRef} className="relative flex items-center gap-2">
           {user ? (
-            <Link href="/chats" className="flex h-[38px] items-center gap-2 rounded-full bg-white/10 pl-1 pr-3.5 text-[14px] font-medium">
+            <Link href="/account" className="flex h-[38px] items-center gap-2 rounded-full bg-white/10 pl-1 pr-3.5 text-[14px] font-medium">
               <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#ff2792] text-[13px] font-semibold">{user.name[0]?.toUpperCase()}</span>
               <span className="max-w-[120px] truncate">{user.name}</span>
             </Link>

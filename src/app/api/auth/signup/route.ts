@@ -9,6 +9,6 @@ export async function POST(req: Request) {
   const user = await createUser({ name, email, passwordHash: await hashPassword(password) });
   const anon = (await cookies()).get(ANON_COOKIE)?.value;
   if (anon) await claimAnonymousData(anon, user.id);
-  await startSession(user.id);
+  await startSession(toPublic(user));
   return Response.json(toPublic(user), { status: 201 });
 }
