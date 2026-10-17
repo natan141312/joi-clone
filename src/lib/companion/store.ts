@@ -162,6 +162,41 @@ export async function createChat(character: Character, userName: string, ownerId
   return chat;
 }
 
+/** The greeting a new chat starts with (not saved). */
+export function newChatDraft(character: Character, userName: string, ownerId: string, id: string = randomUUID()): Chat {
+  const now = new Date().toISOString();
+  return {
+    id,
+    characterId: character.id,
+    ownerId,
+    userName,
+    messages: character.greeting
+      ? [{ id: `greeting-${id}`, role: "assistant", content: fillTemplate(character.greeting, character.name, userName), createdAt: now }]
+      : [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/**
+ * Re-creates a chat from the browser's copy. Used when the server copy is missing (for example on
+ * Vercel without Redis, where each server instance has its own temporary storage).
+ */
+export async function restoreChat(id: string, character: Character, userName: string, ownerId: string, history: unknown): Promise<Chat | null> {
+  if (!SAFE_ID.test(id)) return null;
+  const chat = newChatDraft(character, userName, ownerId, id);
+  if (Array.isArray(history)) {
+    const msgs = history
+      .slice(-100)
+      .filter((m): m is { role: string; content: string } => !!m && typeof m === "object" && typeof (m as { content?: unknown }).content === "string")
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ id: randomUUID(), role: m.role as Message["role"], content: m.content.slice(0, 4000), createdAt: chat.createdAt }));
+    if (msgs.length) chat.messages = msgs;
+  }
+  await kv.put("chats", chat.id, chat);
+  return chat;
+}
+
 export async function getChat(id: string): Promise<Chat | null> {
   if (!SAFE_ID.test(id)) return null;
   return kv.get<Chat>("chats", id);

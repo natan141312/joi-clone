@@ -1,6 +1,6 @@
 import { llmConfig, streamChat } from "@/lib/companion/llm";
 import { buildMessages } from "@/lib/companion/prompt";
-import { getOwnedChat } from "@/lib/companion/access";
+import { getOrRestoreChat } from "@/lib/companion/access";
 import { appendMessages } from "@/lib/companion/store";
 
 const MAX_TEXT = 4000;
@@ -9,12 +9,12 @@ const MAX_IMAGE = 4_000_000;
 // POST { text, image? } -> streams the character's reply as text/plain, then saves both messages.
 export async function POST(req: Request, ctx: RouteContext<"/api/chats/[id]/messages">) {
   const { id } = await ctx.params;
-  const body = (await req.json().catch(() => ({}))) as { text?: string; image?: string };
+  const body = (await req.json().catch(() => ({}))) as { text?: string; image?: string; characterId?: string; history?: unknown };
   const text = (body.text ?? "").trim().slice(0, MAX_TEXT);
   const image = typeof body.image === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(body.image) && body.image.length <= MAX_IMAGE ? body.image : undefined;
   if (!text && !image) return Response.json({ error: "Message is empty" }, { status: 400 });
 
-  const owned = await getOwnedChat(id);
+  const owned = await getOrRestoreChat(id, body);
   if (!owned) return Response.json({ error: "Chat not found" }, { status: 404 });
   const { character } = owned;
   const chat = await appendMessages(id, [{ role: "user", content: text, image }]);

@@ -23,6 +23,28 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
   useEffect(() => {
     fetch("/api/status").then((r) => r.json()).then(setStatus).catch(() => {});
   }, []);
+
+  // Browser backup of the conversation: restores it if the server copy is shorter (for example
+  // when another server instance answers), and is sent along so the server can rebuild the chat.
+  const backupKey = `joi_chat_${initialChat.id}`;
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(backupKey) ?? "null") as Message[] | null;
+      if (Array.isArray(saved) && saved.length > initialChat.messages.length) setMessages(saved);
+    } catch {
+      // Storage unavailable: the server copy is used.
+    }
+  }, [backupKey, initialChat.messages.length]);
+  useEffect(() => {
+    try {
+      // Text only: pictures are too large for localStorage.
+      localStorage.setItem(backupKey, JSON.stringify(messages.filter((m) => m.content).map((m) => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt }))));
+    } catch {
+      // ignore
+    }
+  }, [backupKey, messages]);
+
+  const history = () => messages.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content }));
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -54,7 +76,7 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
       const res = await fetch(`/api/chats/${initialChat.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, image: img }),
+        body: JSON.stringify({ text: content, image: img, characterId: character.id, history: history() }),
       });
       if (!res.ok || !res.body) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? `Error ${res.status}`);
       const reader = res.body.getReader();
@@ -81,7 +103,7 @@ export function ChatView({ initialChat, character }: { initialChat: Chat; charac
     const res = await fetch(`/api/chats/${initialChat.id}/image`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: text }),
+      body: JSON.stringify({ prompt: text, characterId: character.id, history: history() }),
     });
     setBusy(false);
     if (!res.ok) return setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Image failed");

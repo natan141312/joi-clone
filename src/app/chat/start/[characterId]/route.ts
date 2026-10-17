@@ -11,5 +11,6 @@ export async function GET(_req: Request, ctx: RouteContext<"/chat/start/[charact
   const ownerId = await ensureViewerId();
   const user = await getCurrentUser();
   const chat = await createChat(character, user?.name ?? "You", ownerId);
-  redirect(`/chat/${chat.id}`);
+  // ?c= lets the chat page rebuild the chat if another server instance handles the next request.
+  redirect(`/chat/${chat.id}?c=${character.id}`);
 }
